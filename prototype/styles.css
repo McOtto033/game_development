@@ -1722,27 +1722,238 @@ h1 {
 
 @media (max-width: 620px) {
   .app-shell {
-    padding: 14px;
+    gap: 6px;
+    padding: 8px;
   }
 
   .topbar {
     align-items: start;
     flex-direction: column;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .eyebrow {
+    font-size: 0.62rem;
+  }
+
+  h1 {
+    font-size: 1.26rem;
+    line-height: 1.05;
   }
 
   .summary-strip {
     justify-content: start;
+    gap: 4px;
+  }
+
+  .summary-strip span,
+  .cost-pill {
+    min-height: 22px;
+    padding: 0 7px;
+    font-size: 0.64rem;
+  }
+
+  .control-band {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px;
+  }
+
+  .control-band label,
+  .editor-band label {
+    gap: 3px;
+    font-size: 0.62rem;
+  }
+
+  select,
+  input,
+  button {
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: 0.72rem;
+  }
+
+  .control-band .button-row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .control-band .button-row button {
+    min-width: 0;
+    padding: 0 4px;
+    overflow: hidden;
+    font-size: 0.62rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .workbench-grid {
+    gap: 8px;
+  }
+
+  .battle-layout {
+    order: -1;
+    height: clamp(400px, calc(100vh - 224px), 540px);
+    height: clamp(400px, calc(100svh - 224px), 540px);
+    grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 4px;
+    margin-top: 0;
+    overflow: hidden;
+  }
+
+  .army-panel {
+    padding: 5px;
+    overflow: hidden;
+  }
+
+  .army-panel .panel-heading {
+    margin-bottom: 4px;
+  }
+
+  .panel-heading h2 {
+    font-size: 0.82rem;
   }
 
   .board {
-    grid-template-columns: repeat(3, minmax(84px, 1fr));
-    grid-template-rows: repeat(3, minmax(104px, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 3px;
+    height: 100%;
+    min-height: 0;
   }
 
   .slot {
-    min-height: 112px;
-    padding: 7px;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    min-height: 0;
+    border-radius: 6px;
+    padding: 3px;
+    overflow: hidden;
+  }
+
+  .slot::after {
+    inset: 2px;
+    border-radius: 5px;
+  }
+
+  .slot-meta {
+    min-width: 0;
+    gap: 2px;
+    font-size: 0.48rem;
+    line-height: 1;
+  }
+
+  .slot-meta .term {
+    max-width: 58px;
+    padding: 1px 4px;
+    overflow: hidden;
+    font-size: 0.48rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .unit {
+    align-content: center;
+    align-self: stretch;
+    gap: 2px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .unit-name {
+    flex-wrap: nowrap;
+    gap: 2px;
+    min-width: 0;
+    font-size: 0.58rem;
+  }
+
+  .unit-name > span:not(.general-mark):not(.unit-cost) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .general-mark {
+    width: 15px;
+    height: 15px;
+    font-size: 0.5rem;
+  }
+
+  .unit-cost {
+    display: none;
+  }
+
+  .stat-line {
+    flex-wrap: nowrap;
+    gap: 2px;
+    overflow: hidden;
+  }
+
+  .chip {
+    min-height: 14px;
+    padding: 0 3px;
+    font-size: 0.48rem;
+    line-height: 1;
+  }
+
+  .unit-action-line {
+    min-height: 14px;
+    overflow: hidden;
+  }
+
+  .unit-action-line .term {
+    width: 100%;
+    border-radius: 4px;
+    padding: 1px 3px;
+    overflow: hidden;
+    font-size: 0.48rem;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hpbar {
+    height: 4px;
+  }
+
+  .status-line {
+    gap: 2px;
+    max-height: 14px;
+    overflow: hidden;
+  }
+
+  .status-chip {
+    min-height: 12px;
+    padding: 0 3px;
+    font-size: 0.44rem;
+    line-height: 1;
+  }
+
+  .center-panel {
+    grid-template-columns: auto minmax(0, 1fr);
+    min-height: 44px;
+    gap: 6px;
+    padding: 5px 7px;
+  }
+
+  .status-box strong {
+    font-size: 0.78rem;
+  }
+
+  .status-box span,
+  .phase-summary {
+    font-size: 0.62rem;
+    line-height: 1.25;
+  }
+
+  .phase-summary {
+    max-height: 36px;
+    overflow: hidden;
   }
 
   .detail-grid {

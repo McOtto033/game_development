@@ -5,9 +5,9 @@ const CUSTOM_DECK_STORAGE_KEY = "taisho-custom-decks-v1";
 const STALEMATE_REPEAT_LIMIT = 3;
 const SAFETY_TURN_LIMIT = 80;
 const STANDARD_ARMOR_DURATION = 1;
-const GUARD_ARMOR = 18;
-const RAMPART_GUARD_BONUS = 6;
-const BLESSING_ARMOR = 6;
+const GUARD_ARMOR = 14;
+const RAMPART_GUARD_BONUS = 5;
+const BLESSING_ARMOR = 4;
 const FRONT_ARMOR = 12;
 const HARBOR_WALL_ARMOR = 10;
 const FALLBACK_WARD_ARMOR = 14;
@@ -15,19 +15,29 @@ const RALLY_AT = 3;
 const RALLY_DURATION = 2;
 const COMMAND_AG = 8;
 const COMMAND_DURATION = 1;
-const TURN_THREE_CHARGE_AT = 4;
+const SCOUT_LEAD_AG = 6;
+const TURN_THREE_CHARGE_AT = 3;
 const TURN_THREE_CHARGE_DURATION = 2;
 const FINISH_SIGNAL_AT = 6;
 const FINISH_SIGNAL_DURATION = 2;
-const LINE_HEAL_RATE = 0.55;
+const SINGLE_HEAL_RATE = 0.65;
+const LINE_HEAL_RATE = 0.45;
 const WIDE_PRAYER_BONUS = 2;
-const GENERAL_WARD_ARMOR = 22;
+const GENERAL_WARD_ARMOR = 20;
 const DEVOTED_WARD_BONUS = 4;
 const GENERAL_WARD_HEAL_RATE = 0.35;
 const GENERAL_WARD_DURATION = 1;
 const ALL_ORDER_AT = 3;
 const ALL_ORDER_AG = 5;
 const ALL_ORDER_DURATION = 1;
+const SWEEP_DAMAGE_OFFSET = 10;
+const OPENING_BARRAGE_OFFSET = 14;
+const REAR_CANNON_BONUS = 3;
+const GUARD_STRIKE_RATE = 0.45;
+const PRAYER_STRIKE_RATE = 0.35;
+const SNIPE_DAMAGE_OFFSET = 6;
+const RAID_DAMAGE_OFFSET = 5;
+const MIDDLE_RAID_BONUS = 2;
 const COL_LABELS = ["前列", "中列", "後列"];
 const ROW_LABELS = ["上段", "中段", "下段"];
 
@@ -137,7 +147,7 @@ const actions = {
       dealDamageGroup(
         state,
         unit,
-        targets.map((target, index) => ({ target, rawDamage: Math.max(4, base - 4 - index * 3) })),
+        targets.map((target, index) => ({ target, rawDamage: Math.max(4, base - 5 - index * 5) })),
         "貫通",
         log,
       );
@@ -149,25 +159,16 @@ const actions = {
     execute(state, unit, log) {
       const targets = enemies(state, unit.side).filter((enemy) => enemy.col === 0);
       if (targets.length === 0) return logNoTarget(unit, log);
-      const damage = Math.max(4, unitStats(state, unit).at - 5);
+      const damage = Math.max(4, unitStats(state, unit).at - SWEEP_DAMAGE_OFFSET);
       dealDamageGroup(state, unit, targets.map((target) => ({ target, rawDamage: damage })), "掃射", log);
     },
   },
   guard: {
     name: "守護",
-    text: "自分と前の味方に装甲+18/1T。",
+    text: "自分と前の味方に装甲を付与し、同段最前の敵へ小ダメージ。",
     execute(state, unit, log) {
-      const allies = living(state, unit.side);
-      const frontAlly = allies.find((ally) => ally.row === unit.row && ally.col < unit.col);
-      const targets = [unit, frontAlly].filter(Boolean);
-      const armor = guardArmorFor(state, unit);
-      const buffEvents = [];
-      targets.forEach((target) => {
-        grantArmor(state, target, armor, STANDARD_ARMOR_DURATION);
-        buffEvents.push({ targetId: target.id, armor, duration: STANDARD_ARMOR_DURATION });
-      });
-      log.push(`${unitLabel(unit)} の守護: ${buffTargetSummary(targets)} に装甲+${armor}/${STANDARD_ARMOR_DURATION}T`);
-      recordBuffGroupFrame(log, state, unit, buffEvents, `${unit.card.name} の守護`);
+      executeGuardProtection(state, unit, log);
+      executeGuardStrike(state, unit, log);
     },
   },
   rally: {
@@ -187,29 +188,10 @@ const actions = {
   },
   heal: {
     name: "祈祷",
-    text: "最も傷ついた味方を回復。",
+    text: "最も傷ついた味方を回復し、同段最前の敵へ小ダメージ。",
     execute(state, unit, log) {
-      const targets = living(state, unit.side).filter((ally) => ally.hp < ally.maxHp);
-      if (targets.length === 0) return logNoTarget(unit, log);
-      const target = targets.sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
-      const amount = Math.max(7, Math.floor(unitStats(state, unit).at * 0.75));
-      const healed = heal(target, amount);
-      if (unit.card.abilityKey === "blessing") {
-        grantArmor(state, target, BLESSING_ARMOR, STANDARD_ARMOR_DURATION);
-      }
-      log.push(`${unitLabel(unit)} の祈祷: ${unitLabel(target)} が${healed}回復`);
-      if (unit.card.abilityKey === "blessing") {
-        log.push(`${unitLabel(unit)} の能力: ${unitLabel(target)} に装甲+${BLESSING_ARMOR}/${STANDARD_ARMOR_DURATION}T`);
-      }
-      recordFrame(log, state, {
-        type: "heal",
-        sourceId: unit.id,
-        targetId: target.id,
-        amount: healed,
-        healEvents: [{ targetId: target.id, amount: healed }],
-        buffEvents: unit.card.abilityKey === "blessing" ? [{ targetId: target.id, armor: BLESSING_ARMOR, duration: STANDARD_ARMOR_DURATION }] : [],
-        text: `${unit.card.name} の祈祷`,
-      });
+      executeHealPrayer(state, unit, log);
+      executePrayerStrike(state, unit, log);
     },
   },
   lineHeal: {
@@ -267,7 +249,7 @@ const actions = {
       const farthest = enemies(state, unit.side).sort((a, b) => b.col - a.col || a.hp - b.hp)[0];
       if (!farthest) return logNoTarget(unit, log);
       const target = farthest.general && !isGeneralExposed(state, farthest) ? farthest : farthest;
-      let damage = Math.max(5, unitStats(state, unit).at - 3);
+      let damage = Math.max(5, unitStats(state, unit).at - SNIPE_DAMAGE_OFFSET);
       if (target === enemyGeneral && !isGeneralExposed(state, target)) {
         damage = Math.floor(damage * 0.55);
       }
@@ -281,7 +263,7 @@ const actions = {
       const targets = enemies(state, unit.side).filter((enemy) => enemy.col >= 1);
       const target = (targets.length ? targets : enemies(state, unit.side)).sort((a, b) => a.hp - b.hp)[0];
       if (!target) return logNoTarget(unit, log);
-      let damage = Math.max(5, unitStats(state, unit).at - 2);
+      let damage = Math.max(5, unitStats(state, unit).at - RAID_DAMAGE_OFFSET);
       if (target.general && !isGeneralExposed(state, target)) {
         damage = Math.floor(damage * 0.65);
       }
@@ -448,9 +430,9 @@ const cards = {
     soldierCost: 4,
     generalCost: 6,
     tags: ["scout"],
-    ability: "奇襲時、対象が中列ならダメージ+3。",
+    ability: `奇襲時、対象が中列ならダメージ+${MIDDLE_RAID_BONUS}。`,
     abilityKey: "middleRaid",
-    generalSkill: "1ターン目、味方斥候のAG+10。",
+    generalSkill: `1ターン目、味方斥候のAG+${SCOUT_LEAD_AG}。`,
     generalKey: "scoutLead",
     front: "slash",
     middle: "raid",
@@ -464,7 +446,7 @@ const cards = {
     soldierCost: 4,
     generalCost: 6,
     tags: ["support"],
-    ability: "城壁上では守護の装甲+6。",
+    ability: `城壁上では守護の装甲+${RAMPART_GUARD_BONUS}。`,
     abilityKey: "rampartCraft",
     generalSkill: "自軍地形コスト-2として扱う。",
     generalKey: "terrainDiscount",
@@ -544,7 +526,7 @@ const cards = {
     soldierCost: 5,
     generalCost: 7,
     tags: ["ranged", "heavy"],
-    ability: "後列からの掃射ダメージ+4。",
+    ability: `後列からの掃射ダメージ+${REAR_CANNON_BONUS}。`,
     abilityKey: "rearCannon",
     generalSkill: "敵前列が2体以上なら、1ターン目に掃射。",
     generalKey: "openingBarrage",
@@ -1348,9 +1330,11 @@ function simulateBattle(options = {}) {
   const state = createBattleState(options);
   const log = options.record ? createBattleLog(state) : createSilentLog();
   applyGeneralSkills(state, log, "battleStart");
+  applyGeneralSkills(state, log, "battleStartAction");
   recordFrame(log, state, { type: "setup", text: "開戦準備" });
   let result = null;
   let stagnantTurns = 0;
+  const repeatedPositions = new Map();
 
   for (let turn = 1; turn <= SAFETY_TURN_LIMIT; turn += 1) {
     state.turn = turn;
@@ -1363,12 +1347,10 @@ function simulateBattle(options = {}) {
 
     const actedIds = new Set();
     while (true) {
-      const unit = nextActingUnit(state, actedIds);
-      if (!unit) break;
-      actedIds.add(unit.id);
-      if (!unit || unit.hp <= 0) continue;
-      const action = actions[actionFor(unit)];
-      action.execute(state, unit, log);
+      const batch = nextActingBatch(state, actedIds);
+      if (!batch) break;
+      batch.units.forEach((unit) => actedIds.add(unit.id));
+      executeActionBatch(state, batch, log);
       result = checkGeneralVictory(state, log);
       if (result) break;
     }
@@ -1381,10 +1363,12 @@ function simulateBattle(options = {}) {
     compactRows(state, log);
 
     const afterTurn = progressSignature(state);
+    const repeatedCount = (repeatedPositions.get(afterTurn) || 0) + 1;
+    repeatedPositions.set(afterTurn, repeatedCount);
     stagnantTurns = beforeTurn === afterTurn ? stagnantTurns + 1 : 0;
-    if (stagnantTurns >= STALEMATE_REPEAT_LIMIT) {
+    if (stagnantTurns >= STALEMATE_REPEAT_LIMIT || repeatedCount >= STALEMATE_REPEAT_LIMIT) {
       result = "draw";
-      log.push(`${STALEMATE_REPEAT_LIMIT}ターン連続でHP/位置が変化しないため引き分け`);
+      log.push(`HP/位置の停滞または同一盤面の反復が${STALEMATE_REPEAT_LIMIT}回発生したため引き分け`);
       recordFrame(log, state, { type: "draw", text: "膠着による引き分け" });
       break;
     }
@@ -1834,11 +1818,11 @@ function applyGeneralSkills(state, log, phase) {
       if (key === "scoutLead") {
         const targets = living(state, side).filter((unit) => unit.card.tags.includes("scout"));
         const buffEvents = targets.map((unit) => {
-          grantStatBuff(state, unit, "ag", 10, COMMAND_DURATION);
-          return { targetId: unit.id, ag: 10, duration: COMMAND_DURATION };
+          grantStatBuff(state, unit, "ag", SCOUT_LEAD_AG, COMMAND_DURATION);
+          return { targetId: unit.id, ag: SCOUT_LEAD_AG, duration: COMMAND_DURATION };
         });
         if (buffEvents.length > 0) {
-          log.push(`${unitLabel(general)} の大将スキル: ${buffTargetSummary(targets)} にAG+10/${COMMAND_DURATION}T`);
+          log.push(`${unitLabel(general)} の大将スキル: ${buffTargetSummary(targets)} にAG+${SCOUT_LEAD_AG}/${COMMAND_DURATION}T`);
           recordBuffGroupFrame(log, state, general, buffEvents, `${general.card.name} の大将スキル`);
         }
       }
@@ -1854,12 +1838,15 @@ function applyGeneralSkills(state, log, phase) {
           recordBuffGroupFrame(log, state, general, buffEvents, `${general.card.name} の大将スキル`);
         }
       }
-      if (key === "openingBarrage") {
-        const frontCount = living(state, opposite(side)).filter((unit) => unit.col === 0).length;
-        if (frontCount >= 2) {
-          log.push(`${unitLabel(general)} の大将スキル: 開幕掃射`);
-          actions.sweep.execute(state, general, log);
-        }
+    }
+    if (phase === "battleStartAction" && key === "openingBarrage") {
+      const frontCount = living(state, opposite(side)).filter((unit) => unit.col === 0).length;
+      if (frontCount >= 2) {
+        const targets = enemies(state, side).filter((enemy) => enemy.col === 0);
+        if (targets.length === 0) return;
+        const damage = Math.max(4, unitStats(state, general).at - OPENING_BARRAGE_OFFSET);
+        log.push(`${unitLabel(general)} の大将スキル: 開幕掃射`);
+        dealDamageGroup(state, general, targets.map((target) => ({ target, rawDamage: damage })), "掃射", log);
       }
     }
     if (phase === "turnStart" && key === "turnThreeCharge" && state.turn === 3) {
@@ -1892,11 +1879,41 @@ function resetTurnFlags(state) {
   });
 }
 
-function nextActingUnit(state, actedIds) {
-  return allLiving(state)
+function nextActingBatch(state, actedIds) {
+  const candidates = allLiving(state)
     .filter((unit) => !actedIds.has(unit.id))
     .map((unit) => ({ unit, ag: unitStats(state, unit).ag }))
-    .sort((a, b) => b.ag - a.ag || boardPriority(a.unit) - boardPriority(b.unit))[0]?.unit || null;
+    .sort((a, b) => b.ag - a.ag || actingTiePriority(a.unit) - actingTiePriority(b.unit));
+  if (candidates.length === 0) return null;
+  const topAg = candidates[0].ag;
+  const topCandidates = candidates.filter((candidate) => candidate.ag === topAg);
+  const first = topCandidates[0].unit;
+  const firstAction = actionFor(first);
+  const simultaneousUnits = topCandidates
+    .map((candidate) => candidate.unit)
+    .filter((unit) => unit.cardId === first.cardId && actionFor(unit) === firstAction);
+  if (simultaneousUnits.length >= 2 && new Set(simultaneousUnits.map((unit) => unit.side)).size >= 2) {
+    return { simultaneous: true, actionKey: firstAction, units: simultaneousUnits };
+  }
+  return { simultaneous: false, actionKey: firstAction, units: [first] };
+}
+
+function executeActionBatch(state, batch, log) {
+  if (batch.simultaneous && batch.actionKey === "guard") {
+    batch.units.forEach((unit) => executeGuardProtection(state, unit, log));
+    batch.units.forEach((unit) => executeGuardStrike(state, unit, log));
+    return;
+  }
+  if (batch.simultaneous && batch.actionKey === "heal") {
+    batch.units.forEach((unit) => executeHealPrayer(state, unit, log));
+    batch.units.forEach((unit) => executePrayerStrike(state, unit, log));
+    return;
+  }
+  batch.units.forEach((unit) => {
+    if (!batch.simultaneous && unit.hp <= 0) return;
+    const action = actions[actionFor(unit)];
+    action.execute(state, unit, log);
+  });
 }
 
 function actionFor(unit) {
@@ -1924,6 +1941,64 @@ function unitStats(state, unit, context = { kind: "neutral", damage: 0 }) {
 function guardArmorFor(state, unit) {
   const terrainId = state.terrain[unit.side][unit.row][unit.col];
   return GUARD_ARMOR + (unit.card.abilityKey === "rampartCraft" && terrainId === "rampart" ? RAMPART_GUARD_BONUS : 0);
+}
+
+function guardStrikeDamageFor(state, unit) {
+  return Math.max(6, Math.floor(unitStats(state, unit).at * GUARD_STRIKE_RATE));
+}
+
+function prayerStrikeDamageFor(state, unit) {
+  return Math.max(5, Math.floor(unitStats(state, unit).at * PRAYER_STRIKE_RATE));
+}
+
+function executeGuardProtection(state, unit, log) {
+  const allies = living(state, unit.side);
+  const frontAlly = allies.find((ally) => ally.row === unit.row && ally.col < unit.col);
+  const targets = [unit, frontAlly].filter(Boolean);
+  const armor = guardArmorFor(state, unit);
+  const buffEvents = [];
+  targets.forEach((target) => {
+    grantArmor(state, target, armor, STANDARD_ARMOR_DURATION);
+    buffEvents.push({ targetId: target.id, armor, duration: STANDARD_ARMOR_DURATION });
+  });
+  log.push(`${unitLabel(unit)} の守護: ${buffTargetSummary(targets)} に装甲+${armor}/${STANDARD_ARMOR_DURATION}T`);
+  recordBuffGroupFrame(log, state, unit, buffEvents, `${unit.card.name} の守護`);
+}
+
+function executeGuardStrike(state, unit, log) {
+  const target = findLaneFrontTarget(state, unit);
+  if (!target) return;
+  dealDamage(state, unit, target, guardStrikeDamageFor(state, unit), "守護反撃", log);
+}
+
+function executeHealPrayer(state, unit, log) {
+  const targets = living(state, unit.side).filter((ally) => ally.hp < ally.maxHp);
+  if (targets.length === 0) return;
+  const target = targets.sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+  const amount = Math.max(7, Math.floor(unitStats(state, unit).at * SINGLE_HEAL_RATE));
+  const healed = heal(target, amount);
+  if (unit.card.abilityKey === "blessing") {
+    grantArmor(state, target, BLESSING_ARMOR, STANDARD_ARMOR_DURATION);
+  }
+  log.push(`${unitLabel(unit)} の祈祷: ${unitLabel(target)} が${healed}回復`);
+  if (unit.card.abilityKey === "blessing") {
+    log.push(`${unitLabel(unit)} の能力: ${unitLabel(target)} に装甲+${BLESSING_ARMOR}/${STANDARD_ARMOR_DURATION}T`);
+  }
+  recordFrame(log, state, {
+    type: "heal",
+    sourceId: unit.id,
+    targetId: target.id,
+    amount: healed,
+    healEvents: [{ targetId: target.id, amount: healed }],
+    buffEvents: unit.card.abilityKey === "blessing" ? [{ targetId: target.id, armor: BLESSING_ARMOR, duration: STANDARD_ARMOR_DURATION }] : [],
+    text: `${unit.card.name} の祈祷`,
+  });
+}
+
+function executePrayerStrike(state, unit, log) {
+  const target = findLaneFrontTarget(state, unit);
+  if (!target) return;
+  dealDamage(state, unit, target, prayerStrikeDamageFor(state, unit), "祈祷弾", log);
 }
 
 function grantArmor(state, unit, amount, durationTurns = STANDARD_ARMOR_DURATION) {
@@ -2056,13 +2131,13 @@ function damageForTarget(state, source, target, rawDamage, actionName) {
     if (laneEnemies.length >= 2 && actionName === "貫通") damage += 2;
   }
   if (source.card.abilityKey === "middleRaid" && actionName === "奇襲" && target.col === 1) {
-    damage += 3;
+    damage += MIDDLE_RAID_BONUS;
   }
   if (source.card.abilityKey === "generalBreaker" && actionName === "破陣" && target.general) {
     damage += 4;
   }
   if (source.card.abilityKey === "rearCannon" && source.col === 2 && actionName === "掃射") {
-    damage += 4;
+    damage += REAR_CANNON_BONUS;
   }
   if (source.general && source.card.generalKey === "frontDuel" && source.col === 0) {
     damage += 4;
@@ -2073,9 +2148,12 @@ function damageForTarget(state, source, target, rawDamage, actionName) {
     damage += 5;
     state.flags[firstSnipeFlag] = true;
   }
+  if (actionName === "貫通" && target.general && !isGeneralExposed(state, target)) {
+    damage = Math.floor(damage * 0.6);
+  }
 
   const incoming = unitStats(state, target, { kind: "incoming", damage });
-  damage = incoming.damage - incoming.armor;
+  damage = incoming.damage - (actionName === "守護反撃" ? 0 : incoming.armor);
   if (target.card.abilityKey === "steady" && !target.firstHitReduced) {
     damage -= 2;
     target.firstHitReduced = true;
@@ -2163,12 +2241,19 @@ function triggerFinishSignal(state, exposedGeneral, log) {
 function checkGeneralVictory(state, log) {
   const playerGeneral = generalOf(state, "player");
   const enemyGeneral = generalOf(state, "enemy");
-  if (playerGeneral && playerGeneral.hp <= 0) {
+  const playerDown = playerGeneral && playerGeneral.hp <= 0;
+  const enemyDown = enemyGeneral && enemyGeneral.hp <= 0;
+  if (playerDown && enemyDown) {
+    log.push("双方の大将が倒れたため引き分け");
+    recordFrame(log, state, { type: "draw", text: "双方大将撃破" });
+    return "draw";
+  }
+  if (playerDown) {
     log.push("自軍大将が倒れたため敵軍勝利");
     recordFrame(log, state, { type: "win", targetId: playerGeneral.id, text: "敵軍勝利" });
     return "enemy";
   }
-  if (enemyGeneral && enemyGeneral.hp <= 0) {
+  if (enemyDown) {
     log.push("敵軍大将が倒れたため自軍勝利");
     recordFrame(log, state, { type: "win", targetId: enemyGeneral.id, text: "自軍勝利" });
     return "player";
@@ -2234,9 +2319,15 @@ function findFrontTarget(state, unit) {
   return enemies(state, unit.side).sort((a, b) => a.col - b.col || a.hp - b.hp)[0] || null;
 }
 
+function findLaneFrontTarget(state, unit) {
+  return enemies(state, unit.side)
+    .filter((enemy) => enemy.row === unit.row)
+    .sort((a, b) => a.col - b.col)[0] || null;
+}
+
 function isGeneralExposed(state, general) {
   if (!general || general.hp <= 0) return false;
-  const protectors = living(state, general.side).filter((unit) => !unit.general && unit.col < general.col);
+  const protectors = living(state, general.side).filter((unit) => !unit.general && unit.row === general.row && unit.col < general.col);
   return general.col === 0 || protectors.length === 0;
 }
 
@@ -2263,6 +2354,14 @@ function opposite(side) {
 function boardPriority(unit) {
   const sideOffset = unit.side === "player" ? 0 : 100;
   return sideOffset + unit.col * 10 + unit.row;
+}
+
+function actingTiePriority(unit) {
+  return -unitActionCost(unit) * 1000 + boardPriority(unit);
+}
+
+function unitActionCost(unit) {
+  return unit.general ? unit.card.generalCost : unit.card.soldierCost;
 }
 
 function unitLabel(unit) {
@@ -2710,19 +2809,19 @@ function actionFormulaText(state, unit, actionKey) {
   const at = unitStats(state, unit).at;
   if (actionKey === "slash") return `式: AT×1.0 = ${at}ダメージ`;
   if (actionKey === "pierce") {
-    return `式: 1体目 max(4, AT-4) = ${Math.max(4, at - 4)} / 2体目 max(4, AT-7) = ${Math.max(4, at - 7)}ダメージ`;
+    return `式: 1体目 max(4, AT-5) = ${Math.max(4, at - 5)} / 2体目 max(4, AT-10) = ${Math.max(4, at - 10)}ダメージ / 守られた大将は×0.6`;
   }
   if (actionKey === "sweep") {
-    const rearBonus = unit.card.abilityKey === "rearCannon" ? " / 後列なら能力で+4" : "";
-    return `式: max(4, AT-5) = ${Math.max(4, at - 5)}ダメージ${rearBonus}`;
+    const rearBonus = unit.card.abilityKey === "rearCannon" ? ` / 後列なら能力で+${REAR_CANNON_BONUS}` : "";
+    return `式: max(4, AT-${SWEEP_DAMAGE_OFFSET}) = ${Math.max(4, at - SWEEP_DAMAGE_OFFSET)}ダメージ${rearBonus}`;
   }
   if (actionKey === "guard") {
-    return `式: 装甲+${guardArmorFor(state, unit)}/${STANDARD_ARMOR_DURATION}T${unit.card.abilityKey === "rampartCraft" ? "（城壁上なら+6込み）" : ""}`;
+    return `式: 装甲+${guardArmorFor(state, unit)}/${STANDARD_ARMOR_DURATION}T、反撃 max(6, floor(AT×${GUARD_STRIKE_RATE})) = ${guardStrikeDamageFor(state, unit)}ダメージ（装甲無視）${unit.card.abilityKey === "rampartCraft" ? "（城壁上なら装甲+5込み）" : ""}`;
   }
   if (actionKey === "rally") return `式: 味方前列にAT+${RALLY_AT}/${RALLY_DURATION}T`;
   if (actionKey === "heal") {
     const blessing = unit.card.abilityKey === "blessing" ? ` / 能力で装甲+${BLESSING_ARMOR}/${STANDARD_ARMOR_DURATION}T` : "";
-    return `式: max(7, floor(AT×0.75)) = ${Math.max(7, Math.floor(at * 0.75))}回復${blessing}`;
+    return `式: max(7, floor(AT×${SINGLE_HEAL_RATE})) = ${Math.max(7, Math.floor(at * SINGLE_HEAL_RATE))}回復、反撃 max(5, floor(AT×${PRAYER_STRIKE_RATE})) = ${prayerStrikeDamageFor(state, unit)}ダメージ${blessing}`;
   }
   if (actionKey === "lineHeal") {
     const bonus = unit.card.abilityKey === "widePrayer" ? ` / 能力で+${WIDE_PRAYER_BONUS}` : "";
@@ -2731,8 +2830,8 @@ function actionFormulaText(state, unit, actionKey) {
   if (actionKey === "generalWard") {
     return `式: 味方大将に装甲+${generalWardArmorFor(unit)}/${GENERAL_WARD_DURATION}T / max(5, floor(AT×${GENERAL_WARD_HEAL_RATE})) = ${generalWardHealFor(state, unit)}回復`;
   }
-  if (actionKey === "snipe") return `式: max(5, AT-3) = ${Math.max(5, at - 3)}ダメージ / 守られた大将は×0.55`;
-  if (actionKey === "raid") return `式: max(5, AT-2) = ${Math.max(5, at - 2)}ダメージ / 守られた大将は×0.65 / 中列対象なら+3`;
+  if (actionKey === "snipe") return `式: max(5, AT-${SNIPE_DAMAGE_OFFSET}) = ${Math.max(5, at - SNIPE_DAMAGE_OFFSET)}ダメージ / 守られた大将は×0.55`;
+  if (actionKey === "raid") return `式: max(5, AT-${RAID_DAMAGE_OFFSET}) = ${Math.max(5, at - RAID_DAMAGE_OFFSET)}ダメージ / 守られた大将は×0.65 / 中列対象なら+${MIDDLE_RAID_BONUS}`;
   if (actionKey === "command") return `式: 同段味方にAG+${COMMAND_AG} / AT+${commandAtBonusFor(unit)} / ${COMMAND_DURATION}T`;
   if (actionKey === "siege") {
     const breakerBonus = unit.card.abilityKey === "generalBreaker" ? " / 能力で大将に+4" : "";
@@ -2855,15 +2954,15 @@ function actionKindLabel(actionKey) {
 function actionSpecText(actionKey) {
   const specs = {
     slash: "最前の敵1体。AT×1.0ダメージ。",
-    pierce: "同段の前から2体。1体目 max(4, AT-4)、2体目 max(4, AT-7)。ランス能力で条件達成時+2。",
-    sweep: "敵前列全体。max(4, AT-5)。キャノン能力で後列時+4。",
-    guard: "自分と同段前方の味方に装甲+18/1T。ビルダー能力で城壁上なら装甲+24/1T。",
+    pierce: "同段の前から2体。1体目 max(4, AT-5)、2体目 max(4, AT-10)。守られた大将には×0.6。ランス能力で条件達成時+2。",
+    sweep: `敵前列全体。max(4, AT-${SWEEP_DAMAGE_OFFSET})。キャノン能力で後列時+${REAR_CANNON_BONUS}。`,
+    guard: `自分と同段前方の味方に装甲+${GUARD_ARMOR}/1T。ビルダー能力で城壁上なら装甲+${GUARD_ARMOR + RAMPART_GUARD_BONUS}/1T。さらに同段最前の敵へ装甲無視の小ダメージ。`,
     rally: "味方前列全体にAT+3/2T。",
-    heal: "HP割合が最も低い味方を max(7, floor(AT×0.75)) 回復。ヒーラー能力で対象に装甲+6/1T。",
-    lineHeal: "同段の傷ついた味方全体を max(6, floor(AT×0.55)) 回復。プリースト能力で+2。",
-    generalWard: "味方大将に装甲+22/1Tと max(5, floor(AT×0.35)) 回復。パラディン能力で装甲+4。",
-    snipe: "後列優先。max(5, AT-3)。守られた大将には×0.55。アーチャー大将の初回狙撃は+5。",
-    raid: "中後列の低HPを優先。max(5, AT-2)。守られた大将には×0.65。ローグ能力で中列対象なら+3。",
+    heal: `HP割合が最も低い味方を max(7, floor(AT×${SINGLE_HEAL_RATE})) 回復し、同段最前の敵へ小ダメージ。ヒーラー能力で対象に装甲+${BLESSING_ARMOR}/1T。`,
+    lineHeal: `同段の傷ついた味方全体を max(6, floor(AT×${LINE_HEAL_RATE})) 回復。プリースト能力で+2。`,
+    generalWard: `味方大将に装甲+${GENERAL_WARD_ARMOR}/1Tと max(5, floor(AT×0.35)) 回復。パラディン能力で装甲+4。`,
+    snipe: `後列優先。max(5, AT-${SNIPE_DAMAGE_OFFSET})。守られた大将には×0.55。アーチャー大将の初回狙撃は+5。`,
+    raid: `中後列の低HPを優先。max(5, AT-${RAID_DAMAGE_OFFSET})。守られた大将には×0.65。ローグ能力で中列対象なら+${MIDDLE_RAID_BONUS}。`,
     command: "同段の自分以外の味方にAG+8/AT+2/1T。コマンダー能力でAT+3。",
     siege: "露出大将を優先。AT×1.0、露出大将なら+6。ブレイカー能力で大将対象ならさらに+4。",
     wait: "行動しない。",

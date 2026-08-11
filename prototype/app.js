@@ -1740,10 +1740,10 @@ function expandReplayFrame(frame) {
 }
 
 function replayDelay(frame) {
-  let baseDelay = frame.type === "attack" ? 2200 : ["heal", "buff"].includes(frame.type) ? 1100 : frame.type === "turn" ? 520 : frame.type === "finish" ? 420 : 340;
-  if (frame.phase === "windup") baseDelay = frame.type === "attack" ? 820 : 640;
-  if (frame.phase === "range") baseDelay = 880;
-  if (frame.phase === "effect") baseDelay = frame.type === "attack" ? 980 : 900;
+  let baseDelay = frame.type === "attack" ? 2000 : ["heal", "buff"].includes(frame.type) ? 1900 : frame.type === "turn" ? 520 : frame.type === "finish" ? 420 : 340;
+  if (frame.phase === "windup") baseDelay = frame.type === "attack" ? 200 : 1000;
+  if (frame.phase === "range") baseDelay = 900;
+  if (frame.phase === "effect") baseDelay = 900;
   const speed = Number(setup.replaySpeed) || 1;
   return Math.round(baseDelay / speed);
 }

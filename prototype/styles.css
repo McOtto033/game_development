@@ -538,15 +538,15 @@ h2 {
 .is-range-cell::after {
   border-color: var(--effect-color);
   background: color-mix(in srgb, var(--effect-color) 18%, transparent);
-  animation: range-show 0.8s ease 0.2s both;
+  animation: range-show 0.8s ease both;
 }
 
 .is-attack-target {
-  animation: target-flash 0.36s ease 1.1s both;
+  animation: target-flash 0.36s ease both;
 }
 
 .is-attack-target .unit {
-  animation: damage-shake 0.36s ease 1.1s both;
+  animation: damage-shake 0.36s ease both;
 }
 
 .effect-float {
@@ -567,17 +567,17 @@ h2 {
   opacity: 0;
   text-align: center;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
-  animation: damage-float 0.8s ease 1.2s both;
+  animation: damage-float 0.8s ease both;
 }
 
 .heal-float {
   --effect-color: #2f8f57;
-  animation: heal-float 0.8s ease 0.1s both;
+  animation: heal-float 0.8s ease both;
 }
 
 .buff-float {
   --effect-color: #b98524;
-  animation: heal-float 0.8s ease 0.1s both;
+  animation: heal-float 0.8s ease both;
 }
 
 .effect-float span {

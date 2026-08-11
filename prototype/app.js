@@ -1646,12 +1646,13 @@ function resultLabel(result) {
 function playReplay() {
   if (!lastBattleLog || lastBattleLog.frames.length === 0) return;
   stopReplay(false);
+  const playbackFrames = replayFramesForPlayback(lastBattleLog.frames);
   let frameIndex = 0;
   els.playReplay.disabled = true;
   els.playReplay.textContent = "再生中";
 
   const step = () => {
-    const frame = lastBattleLog.frames[frameIndex];
+    const frame = playbackFrames[frameIndex];
     activeFrame = frame;
     lastState = frame.state;
     renderBoards(frame.state);
@@ -1664,7 +1665,7 @@ function playReplay() {
     els.turnCount.textContent = `${frame.state.turn}T`;
     frameIndex += 1;
 
-    if (frameIndex < lastBattleLog.frames.length) {
+    if (frameIndex < playbackFrames.length) {
       replayTimer = globalThis.setTimeout(step, replayDelay(frame));
       return;
     }
@@ -1687,8 +1688,62 @@ function playReplay() {
   step();
 }
 
+function replayFramesForPlayback(frames) {
+  return frames.flatMap((frame) => expandReplayFrame(frame));
+}
+
+function expandReplayFrame(frame) {
+  const setupState = frame.beforeState || frame.state;
+  if (frame.type === "attack") {
+    return [
+      {
+        ...frame,
+        phase: "windup",
+        state: setupState,
+        rangeCells: [],
+        attackEvents: [],
+        targetId: null,
+        damage: 0,
+      },
+      {
+        ...frame,
+        phase: "range",
+        state: setupState,
+        attackEvents: [],
+        targetId: null,
+        damage: 0,
+      },
+      {
+        ...frame,
+        phase: "effect",
+        rangeCells: [],
+      },
+    ];
+  }
+  if (["heal", "buff"].includes(frame.type) && frame.sourceId) {
+    return [
+      {
+        ...frame,
+        phase: "windup",
+        healEvents: [],
+        buffEvents: [],
+        targetId: null,
+        amount: 0,
+      },
+      {
+        ...frame,
+        phase: "effect",
+      },
+    ];
+  }
+  return [{ ...frame, phase: "instant" }];
+}
+
 function replayDelay(frame) {
-  const baseDelay = frame.type === "attack" ? 2200 : ["heal", "buff"].includes(frame.type) ? 1100 : frame.type === "turn" ? 520 : frame.type === "finish" ? 420 : 340;
+  let baseDelay = frame.type === "attack" ? 2200 : ["heal", "buff"].includes(frame.type) ? 1100 : frame.type === "turn" ? 520 : frame.type === "finish" ? 420 : 340;
+  if (frame.phase === "windup") baseDelay = frame.type === "attack" ? 820 : 640;
+  if (frame.phase === "range") baseDelay = 880;
+  if (frame.phase === "effect") baseDelay = frame.type === "attack" ? 980 : 900;
   const speed = Number(setup.replaySpeed) || 1;
   return Math.round(baseDelay / speed);
 }
@@ -2089,6 +2144,7 @@ function dealDamageGroup(state, source, targetSpecs, actionName, log) {
   if (events.length === 0) return logNoTarget(source, log);
 
   const rangeCells = rangeCellsForAction(state, source, actionName, events[0].target);
+  const beforeState = snapshotBattleState(state);
   events.forEach((event) => {
     event.target.hp = Math.max(0, event.target.hp - event.damage);
   });
@@ -2101,6 +2157,7 @@ function dealDamageGroup(state, source, targetSpecs, actionName, log) {
     damage: events[0].damage,
     attackEvents: events.map((event) => ({ targetId: event.targetId, damage: event.damage })),
     rangeCells,
+    beforeState,
     text: `${source.card.name} の${actionName}`,
   });
 

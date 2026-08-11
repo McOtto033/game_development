@@ -38,8 +38,333 @@ const PRAYER_STRIKE_RATE = 0.35;
 const SNIPE_DAMAGE_OFFSET = 6;
 const RAID_DAMAGE_OFFSET = 5;
 const MIDDLE_RAID_BONUS = 2;
-const COL_LABELS = ["前列", "中列", "後列"];
-const ROW_LABELS = ["上段", "中段", "下段"];
+const TERMS = Object.freeze({
+  card: "カード",
+  deck: "デッキ",
+  cost: "コスト",
+  costShort: "C",
+  normal: "通常",
+  alpha: "α",
+  alphaFull: "アルファ",
+  alphaTrait: "α特性",
+  alphaAssign: "αに指定",
+  alphaAssigned: "α指定中",
+  alphaDefeat: "α撃破",
+  alphaExposed: "α露出",
+  alphaGuarded: "α保護",
+  playerSide: "自軍",
+  enemySide: "敵軍",
+  ranks: Object.freeze(["前衛", "中衛", "後衛"]),
+  rankShort: Object.freeze(["前", "中", "後"]),
+  lanes: Object.freeze(["左列", "中央列", "右列"]),
+  laneShort: Object.freeze(["左", "中", "右"]),
+  sameLane: "同列",
+  armor: "装甲",
+});
+
+const RANK_LABELS = TERMS.ranks;
+const LANE_LABELS = TERMS.lanes;
+// Backward-compatible aliases until board coordinates are renamed from row/col.
+const COL_LABELS = RANK_LABELS;
+const ROW_LABELS = LANE_LABELS;
+const TERM_REPLACEMENTS = Object.freeze([
+  ["大将スキル", TERMS.alphaTrait],
+  ["大将護衛", TERMS.alphaGuarded],
+  ["大将撃破", TERMS.alphaDefeat],
+  ["大将露出", TERMS.alphaExposed],
+  ["大将中列化", `${TERMS.alpha}${TERMS.ranks[1]}化`],
+  ["守られた大将", `守られた${TERMS.alpha}`],
+  ["味方大将", `味方${TERMS.alpha}`],
+  ["敵大将", `敵${TERMS.alpha}`],
+  ["自軍大将", `自軍${TERMS.alpha}`],
+  ["敵軍大将", `敵軍${TERMS.alpha}`],
+  ["露出大将", `露出${TERMS.alpha}`],
+  ["双方大将", `双方${TERMS.alpha}`],
+  ["大将", TERMS.alpha],
+  ["前列", TERMS.ranks[0]],
+  ["中列", TERMS.ranks[1]],
+  ["後列", TERMS.ranks[2]],
+  ["上段", TERMS.lanes[0]],
+  ["中段", TERMS.lanes[1]],
+  ["下段", TERMS.lanes[2]],
+  ["同段", TERMS.sameLane],
+  ["装甲", TERMS.armor],
+]);
+
+function uiText(value) {
+  return TERM_REPLACEMENTS.reduce((text, [from, to]) => text.replaceAll(from, to), String(value));
+}
+
+function sideLabel(side) {
+  return side === "player" ? TERMS.playerSide : TERMS.enemySide;
+}
+
+function cardCostPairText(card) {
+  return `${TERMS.cost} ${normalCardCost(card)} / ${TERMS.alpha} ${alphaCardCost(card)}`;
+}
+
+function cardCostPairShort(card) {
+  return `${TERMS.costShort}${normalCardCost(card)} / ${TERMS.alpha}${alphaCardCost(card)}`;
+}
+
+function normalCardCost(card) {
+  return card.cost ?? card.soldierCost;
+}
+
+function alphaCardCost(card) {
+  return card.alphaCost ?? card.generalCost;
+}
+
+const CLASSIFICATIONS = Object.freeze({
+  bird: {
+    name: "鳥類",
+    description: "高AG、奇襲、後衛到達を持ちやすい分類。",
+    commonTraits: ["flying", "dash", "mimicry"],
+  },
+  fish: {
+    name: "魚類",
+    description: "海地形、高ステータス、捕食と相性がよい分類。",
+    commonTraits: ["aquatic", "predation", "schooling"],
+  },
+  reptile: {
+    name: "爬虫類",
+    description: "高HP、古代、巨大、水棲などを持ちやすい分類。",
+    commonTraits: ["aquatic", "ancient", "giant", "carapace"],
+  },
+  crustacean: {
+    name: "甲殻類",
+    description: "装甲、前衛維持、反撃を持ちやすい分類。",
+    commonTraits: ["carapace", "aquatic", "poisonResist"],
+  },
+  fungi: {
+    name: "菌類",
+    description: "回復、拡散、寄生、毒性を持ちやすい分類。",
+    commonTraits: ["mycelium", "parasitic", "poisonous", "swarm"],
+  },
+  insect: {
+    name: "昆虫類",
+    description: "低コスト、群体、毒性、擬態を持ちやすい分類。",
+    commonTraits: ["swarm", "flying", "poisonous", "mimicry"],
+  },
+  mammal: {
+    name: "哺乳類",
+    description: "標準的なステータス、地形適応、群れの支援を持ちやすい分類。",
+    commonTraits: ["dash", "pack", "predation"],
+  },
+  dragon: {
+    name: "竜類",
+    description: "高コスト、高AT、範囲攻撃、α向きの分類。",
+    commonTraits: ["flying", "ancient", "giant", "carapace"],
+  },
+  crystalLife: {
+    name: "結晶生命",
+    description: "バリア、反射、地形連動、低速高耐久を持ちやすい分類。",
+    commonTraits: ["crystal", "electric", "poisonResist"],
+  },
+});
+
+const TRAITS = Object.freeze({
+  flying: {
+    name: "飛行",
+    shortText: "地形効果を受けない。",
+    rulesText: "このカードは配置マスの地形効果を受けない。",
+    effectElements: ["terrainBypass"],
+  },
+  aquatic: {
+    name: "水棲",
+    shortText: "海以外ではHP/AT/AGが0.8倍。",
+    rulesText: "海以外の地形にいる間、HP/AT/AGを0.8倍として扱う。",
+    effectElements: ["terrainDependency"],
+    preferredTerrain: ["sea"],
+  },
+  dash: {
+    name: "疾走",
+    shortText: "高AGで先手を取りやすい。",
+    rulesText: "高AG、奇襲、前衛突破を持ちやすい生態特性。",
+    effectElements: ["agBuff"],
+  },
+  predation: {
+    name: "捕食",
+    shortText: "低HPの敵への攻撃性能が上がる。",
+    rulesText: "HP割合が低い敵を攻撃する時、ダメージが上がる。",
+    effectElements: ["executeBonus"],
+  },
+  mimicry: {
+    name: "擬態",
+    shortText: "サーチ攻撃の対象になりにくい。",
+    rulesText: "サーチ攻撃や優先対象指定を受ける時、対象順位を下げる。",
+    effectElements: ["targetEvasion"],
+  },
+  poisonous: {
+    name: "毒性",
+    shortText: "毒や回復阻害を扱う。",
+    rulesText: "攻撃や誘発効果で毒、継続ダメージ、回復阻害を与える。",
+    effectElements: ["poison"],
+  },
+  poisonResist: {
+    name: "毒耐性",
+    shortText: "毒と継続ダメージに強い。",
+    rulesText: "毒、継続ダメージ、回復阻害の影響を軽減または無効化する。",
+    effectElements: ["poisonResist"],
+  },
+  swarm: {
+    name: "群体",
+    shortText: "複数体や同分類支援と相性がよい。",
+    rulesText: "同じ分類や特性を持つ味方の数を参照して効果が変わる。",
+    effectElements: ["groupSynergy"],
+  },
+  pack: {
+    name: "群れ",
+    shortText: "同列や前衛支援と相性がよい。",
+    rulesText: "複数個体での連携、同列支援、前衛展開を持ちやすい。",
+    effectElements: ["groupSynergy"],
+  },
+  mycelium: {
+    name: "菌糸",
+    shortText: "回復や広域支援を扱う。",
+    rulesText: "同列回復、戦闘不能時効果、継続回復を持ちやすい菌類特性。",
+    effectElements: ["heal"],
+  },
+  parasitic: {
+    name: "寄生",
+    shortText: "弱体や継続効果を扱う。",
+    rulesText: "敵への弱体、毒、回復阻害、撃破時誘発を持ちやすい。",
+    effectElements: ["poison"],
+  },
+  ancient: {
+    name: "古代",
+    shortText: "初動は遅いが大技が強い。",
+    rulesText: "高コスト、長い必殺技ターン、強力なα特性を持ちやすい。",
+    effectElements: ["ultimatePayoff"],
+  },
+  giant: {
+    name: "巨大",
+    shortText: "高HPだがAGが低くなりやすい。",
+    rulesText: "高HP、前衛制圧、α適性を持ちやすい。",
+    effectElements: ["frontDurability"],
+  },
+  carapace: {
+    name: "甲殻",
+    shortText: "ダメージカットや装甲を持ちやすい。",
+    rulesText: "被ダメージ軽減、装甲、反撃などの防御効果を持ちやすい。",
+    effectElements: ["damageCut"],
+  },
+  crystal: {
+    name: "結晶",
+    shortText: "バリアや反射を扱う。",
+    rulesText: "バリア、ダメージカット、地形連動、低速高耐久を持ちやすい。",
+    effectElements: ["barrier"],
+  },
+  electric: {
+    name: "発電",
+    shortText: "AG操作や麻痺を扱う。",
+    rulesText: "AG強化、AG弱体、麻痺、連鎖攻撃を持ちやすい。",
+    effectElements: ["agBuff", "agDebuff"],
+  },
+});
+
+const ROLES = Object.freeze({
+  attack: { name: "攻撃", description: "ダメージ行動を主に持つ。" },
+  defense: { name: "防御", description: "装甲、バリア、ダメージカットを持つ。" },
+  heal: { name: "回復", description: "HP回復を主に持つ。" },
+  support: { name: "支援", description: "AT/AG強化、地形補助、必殺技短縮を持つ。" },
+  disrupt: { name: "妨害", description: "弱体、行動阻害、回復封じ、バリア貫通を持つ。" },
+});
+
+const RARITIES = Object.freeze({
+  common: { name: "C", displayName: "コモン", maxCopies: 3, complexity: "low" },
+  rare: { name: "R", displayName: "レア", maxCopies: 2, complexity: "middle" },
+  legendary: { name: "L", displayName: "レジェンド", maxCopies: 1, complexity: "high" },
+});
+
+const STATUS_EFFECTS = Object.freeze({
+  poison: {
+    name: "毒",
+    kind: "debuff",
+    timing: "turnStart",
+    shortText: "ターン開始時にダメージ。",
+    counters: ["poisonResist"],
+  },
+  healBlock: {
+    name: "回復封じ",
+    kind: "debuff",
+    timing: "beforeHeal",
+    shortText: "回復を受けられない。",
+    counters: ["cleanse"],
+  },
+  barrier: {
+    name: "バリア",
+    kind: "buff",
+    timing: "beforeDamage",
+    shortText: "一定量のダメージを防ぐ。",
+    counters: ["barrierPierce"],
+  },
+  paralysis: {
+    name: "麻痺",
+    kind: "debuff",
+    timing: "action",
+    shortText: "AGや行動を阻害する。",
+    counters: ["cleanse"],
+  },
+});
+
+const EFFECT_ELEMENTS = Object.freeze({
+  singleAttack: { name: "単体攻撃", category: "attack", baseScore: 5 },
+  areaAttack: { name: "範囲攻撃", category: "attack", baseScore: 12, riskFlags: ["aoeOverkill"] },
+  searchAttack: { name: "サーチ攻撃", category: "attack", baseScore: 14, riskFlags: ["searchSnowball"] },
+  executeBonus: { name: "追撃補正", category: "attack", baseScore: 8 },
+  heal: { name: "回復", category: "heal", baseScore: 4 },
+  armor: { name: "装甲", category: "defense", baseScore: 5 },
+  barrier: { name: "バリア", category: "defense", baseScore: 8 },
+  damageCut: { name: "ダメージカット", category: "defense", baseScore: 7 },
+  atBuff: { name: "AT強化", category: "support", baseScore: 6 },
+  agBuff: { name: "AG操作", category: "support", baseScore: 10, riskFlags: ["firstStrikeLock"] },
+  ultimateCharge: { name: "必殺技短縮", category: "support", baseScore: 12, riskFlags: ["ultimateLoop"] },
+  atDebuff: { name: "AT弱体", category: "disrupt", baseScore: 6 },
+  agDebuff: { name: "AG弱体", category: "disrupt", baseScore: 9, riskFlags: ["firstStrikeLock"] },
+  defenseDown: { name: "防御低下", category: "disrupt", baseScore: 7 },
+  healBlock: { name: "回復封じ", category: "disrupt", baseScore: 10 },
+  barrierPierce: { name: "バリア貫通", category: "disrupt", baseScore: 12 },
+  poison: { name: "毒", category: "disrupt", baseScore: 7 },
+  poisonResist: { name: "毒耐性", category: "defense", baseScore: 4 },
+  targetEvasion: { name: "対象回避", category: "defense", baseScore: 9 },
+  groupSynergy: { name: "群れシナジー", category: "support", baseScore: 6 },
+  ultimatePayoff: { name: "必殺技強化", category: "support", baseScore: 8 },
+  frontDurability: { name: "前衛耐久", category: "defense", baseScore: 7 },
+  terrainBypass: { name: "地形無視", category: "trait", baseScore: 10 },
+  terrainDependency: { name: "地形依存", category: "trait", baseScore: -8 },
+  wait: { name: "待機", category: "none", baseScore: 0 },
+});
+
+const TARGET_PATTERNS = Object.freeze({
+  frontEnemy: { name: "最前の敵", side: "enemy", shape: "single", priority: "front", depthAccess: [0] },
+  sameLaneFrontEnemy: { name: "同列最前の敵", side: "enemy", shape: "single", priority: "laneFront", depthAccess: [0, 1, 2] },
+  sameLaneFrontTwoEnemies: { name: "同列前方2体", side: "enemy", shape: "line", priority: "laneFrontTwo", depthAccess: [0, 1] },
+  frontRankEnemies: { name: "敵前衛全体", side: "enemy", shape: "rank", priority: "all", depthAccess: [0] },
+  allEnemies: { name: "敵全体", side: "enemy", shape: "all", priority: "all", depthAccess: [0, 1, 2] },
+  rearEnemyPriority: { name: "敵後衛優先", side: "enemy", shape: "single", priority: "rear", depthAccess: [2] },
+  middleRearLowestHpEnemy: { name: "敵中後衛の低HP", side: "enemy", shape: "single", priority: "middleRearLowestHp", depthAccess: [1, 2] },
+  exposedAlphaOrFrontEnemy: { name: `露出${TERMS.alpha}優先`, side: "enemy", shape: "single", priority: "exposedAlpha", depthAccess: [0, 1, 2] },
+  frontRankAllies: { name: "味方前衛全体", side: "ally", shape: "rank", priority: "all", depthAccess: [0] },
+  allAllies: { name: "味方全体", side: "ally", shape: "all", priority: "all", depthAccess: [0, 1, 2] },
+  sameLaneAllies: { name: "同列の味方", side: "ally", shape: "lane", priority: "all", depthAccess: [0, 1, 2] },
+  sameLaneDamagedAllies: { name: "同列の負傷味方", side: "ally", shape: "lane", priority: "damaged", depthAccess: [0, 1, 2] },
+  lowestHpAlly: { name: "低HPの味方", side: "ally", shape: "single", priority: "lowestHpRate", depthAccess: [0, 1, 2] },
+  selfAndForwardAlly: { name: "自身と前方の味方", side: "ally", shape: "line", priority: "selfForward", depthAccess: [0, 1, 2] },
+  allyAlpha: { name: `味方${TERMS.alpha}`, side: "ally", shape: "single", priority: "alpha", depthAccess: [0, 1, 2] },
+  self: { name: "自身", side: "self", shape: "single", priority: "self", depthAccess: [] },
+  none: { name: "対象なし", side: "none", shape: "none", priority: "none", depthAccess: [] },
+});
+
+const ULTIMATE_RULES = Object.freeze({
+  chargeUnit: "turn",
+  defaultTiming: "action",
+  replacesNormalAction: true,
+  resetAfterUse: true,
+  followsAgOrder: true,
+  minTurns: 3,
+  defaultTurns: 5,
+});
 
 const terrainTypes = {
   plain: {
@@ -55,7 +380,7 @@ const terrainTypes = {
     name: "森",
     cost: 1,
     className: "terrain-forest",
-    text: "弓・斥候のAG+6。",
+    text: "飛行/擬態系のAG+6。",
     apply(unit, context) {
       if (unit.card.tags.includes("ranged") || unit.card.tags.includes("scout")) {
         context.ag += 6;
@@ -67,7 +392,7 @@ const terrainTypes = {
     name: "海",
     cost: 2,
     className: "terrain-sea",
-    text: "海適性のAT+3/装甲+1。重装はAG-4。",
+    text: "水棲系のAT+3/装甲+1。大型甲殻はAG-4。",
     apply(unit, context) {
       if (unit.card.tags.includes("sea")) {
         context.at += 3;
@@ -128,6 +453,9 @@ const actions = {
   slash: {
     name: "斬撃",
     text: "最前の敵1体にAT分ダメージ。",
+    components: [
+      { effectElements: ["singleAttack"], targetPattern: "frontEnemy" },
+    ],
     execute(state, unit, log) {
       const target = findFrontTarget(state, unit);
       if (!target) return logNoTarget(unit, log);
@@ -137,6 +465,9 @@ const actions = {
   pierce: {
     name: "貫通",
     text: "同段の前から2体に小ダメージ。",
+    components: [
+      { effectElements: ["areaAttack"], targetPattern: "sameLaneFrontTwoEnemies" },
+    ],
     execute(state, unit, log) {
       const targets = enemies(state, unit.side)
         .filter((enemy) => enemy.row === unit.row)
@@ -156,6 +487,9 @@ const actions = {
   sweep: {
     name: "掃射",
     text: "敵前列全体に小ダメージ。",
+    components: [
+      { effectElements: ["areaAttack"], targetPattern: "frontRankEnemies" },
+    ],
     execute(state, unit, log) {
       const targets = enemies(state, unit.side).filter((enemy) => enemy.col === 0);
       if (targets.length === 0) return logNoTarget(unit, log);
@@ -166,6 +500,10 @@ const actions = {
   guard: {
     name: "守護",
     text: "自分と前の味方に装甲を付与し、同段最前の敵へ小ダメージ。",
+    components: [
+      { effectElements: ["armor"], targetPattern: "selfAndForwardAlly" },
+      { effectElements: ["singleAttack"], targetPattern: "sameLaneFrontEnemy" },
+    ],
     execute(state, unit, log) {
       executeGuardProtection(state, unit, log);
       executeGuardStrike(state, unit, log);
@@ -174,6 +512,9 @@ const actions = {
   rally: {
     name: "鼓舞",
     text: `味方前列のAT+${RALLY_AT}/${RALLY_DURATION}T。`,
+    components: [
+      { effectElements: ["atBuff"], targetPattern: "frontRankAllies" },
+    ],
     execute(state, unit, log) {
       const targets = living(state, unit.side).filter((ally) => ally.col === 0);
       if (targets.length === 0) return logNoTarget(unit, log);
@@ -189,6 +530,10 @@ const actions = {
   heal: {
     name: "祈祷",
     text: "最も傷ついた味方を回復し、同段最前の敵へ小ダメージ。",
+    components: [
+      { effectElements: ["heal"], targetPattern: "lowestHpAlly" },
+      { effectElements: ["singleAttack"], targetPattern: "sameLaneFrontEnemy" },
+    ],
     execute(state, unit, log) {
       executeHealPrayer(state, unit, log);
       executePrayerStrike(state, unit, log);
@@ -197,6 +542,9 @@ const actions = {
   lineHeal: {
     name: "治癒陣",
     text: "同段の味方全体を小回復。",
+    components: [
+      { effectElements: ["heal"], targetPattern: "sameLaneDamagedAllies" },
+    ],
     execute(state, unit, log) {
       const targets = living(state, unit.side)
         .filter((ally) => ally.row === unit.row && ally.hp < ally.maxHp);
@@ -220,6 +568,9 @@ const actions = {
   generalWard: {
     name: "献身",
     text: "味方大将に装甲と小回復。",
+    components: [
+      { effectElements: ["armor", "heal"], targetPattern: "allyAlpha" },
+    ],
     execute(state, unit, log) {
       const target = generalOf(state, unit.side);
       if (!target || target.hp <= 0) return logNoTarget(unit, log);
@@ -244,6 +595,9 @@ const actions = {
   snipe: {
     name: "狙撃",
     text: "後列を狙う。守られた大将には軽減。",
+    components: [
+      { effectElements: ["singleAttack", "searchAttack"], targetPattern: "rearEnemyPriority" },
+    ],
     execute(state, unit, log) {
       const enemyGeneral = generalOf(state, opposite(unit.side));
       const farthest = enemies(state, unit.side).sort((a, b) => b.col - a.col || a.hp - b.hp)[0];
@@ -259,6 +613,9 @@ const actions = {
   raid: {
     name: "奇襲",
     text: "中後列の低HPを狙う。",
+    components: [
+      { effectElements: ["singleAttack", "searchAttack"], targetPattern: "middleRearLowestHpEnemy" },
+    ],
     execute(state, unit, log) {
       const targets = enemies(state, unit.side).filter((enemy) => enemy.col >= 1);
       const target = (targets.length ? targets : enemies(state, unit.side)).sort((a, b) => a.hp - b.hp)[0];
@@ -273,6 +630,9 @@ const actions = {
   command: {
     name: "指揮",
     text: `同段の味方にAG+${COMMAND_AG}/AT+2/${COMMAND_DURATION}T。`,
+    components: [
+      { effectElements: ["agBuff", "atBuff"], targetPattern: "sameLaneAllies" },
+    ],
     execute(state, unit, log) {
       const targets = living(state, unit.side).filter((ally) => ally.row === unit.row && ally.id !== unit.id);
       if (targets.length === 0) return logNoTarget(unit, log);
@@ -290,6 +650,9 @@ const actions = {
   siege: {
     name: "破陣",
     text: "露出した大将を優先して大ダメージ。",
+    components: [
+      { effectElements: ["singleAttack", "searchAttack"], targetPattern: "exposedAlphaOrFrontEnemy" },
+    ],
     execute(state, unit, log) {
       const targetGeneral = generalOf(state, opposite(unit.side));
       const target = targetGeneral && isGeneralExposed(state, targetGeneral)
@@ -303,6 +666,9 @@ const actions = {
   wait: {
     name: "待機",
     text: "何もしない。",
+    components: [
+      { effectElements: ["wait"], targetPattern: "none" },
+    ],
     execute(state, unit, log) {
       log.push(`${unitLabel(unit)} は待機`);
     },
@@ -311,251 +677,537 @@ const actions = {
 
 const cards = {
   captain: {
-    name: "ガード",
+    name: "アーマークラブ",
+    rarity: "common",
+    classification: "crustacean",
+    traits: ["carapace", "aquatic"],
+    roles: ["defense", "attack"],
     hp: 135,
     at: 32,
     ag: 34,
     soldierCost: 5,
     generalCost: 7,
     tags: ["heavy", "leader"],
+    preferredTerrain: ["sea", "rampart"],
     ability: "各ターン最初に受けるダメージ-2。",
     abilityKey: "steady",
     generalSkill: "開戦時、味方前列に装甲+12/1T。",
     generalKey: "frontArmor",
+    ultimate: { name: "甲殻包囲", turns: 4, key: "frontBulwark" },
     front: "slash",
     middle: "guard",
     rear: "rally",
+    codexText: "群れの前面で殻壁を作る沿岸性の防衛種。",
   },
   tideguard: {
-    name: "シールド",
+    name: "リーフバスティオン",
+    rarity: "rare",
+    classification: "crustacean",
+    traits: ["aquatic", "carapace", "giant"],
+    roles: ["defense"],
     hp: 145,
     at: 30,
     ag: 25,
     soldierCost: 5,
     generalCost: 7,
     tags: ["heavy", "sea"],
+    preferredTerrain: ["sea"],
     ability: "海マス上で最大HP+6。",
     abilityKey: "seaHp",
     generalSkill: "開戦時、海/城壁上の味方に装甲+10/1T。",
     generalKey: "harborWall",
+    ultimate: { name: "礁壁展開", turns: 5, key: "teamBarrier" },
     front: "guard",
     middle: "slash",
     rear: "rally",
+    codexText: "珊瑚状の外殻を展開し、海域の群れを守る大型種。",
   },
   archer: {
-    name: "アーチャー",
+    name: "スカイレイ",
+    rarity: "common",
+    classification: "bird",
+    traits: ["flying", "predation"],
+    roles: ["attack"],
     hp: 100,
     at: 37,
     ag: 42,
     soldierCost: 5,
     generalCost: 7,
     tags: ["ranged"],
+    preferredTerrain: ["forest", "highland"],
     ability: "森/高地からの攻撃ダメージ+2。",
     abilityKey: "rangedTerrain",
     generalSkill: "自軍の初回狙撃ダメージ+5。",
     generalKey: "firstSnipe",
+    ultimate: { name: "成層圏急降下", turns: 4, key: "rearExecution" },
     front: "slash",
     middle: "sweep",
     rear: "snipe",
+    codexText: "高空から熱源を検知し、後方の弱った個体を急襲する飛行種。",
   },
   oracle: {
-    name: "ヒーラー",
+    name: "ミストミセリウム",
+    rarity: "common",
+    classification: "fungi",
+    traits: ["mycelium", "swarm"],
+    roles: ["heal", "defense"],
     hp: 105,
     at: 27,
     ag: 31,
     soldierCost: 4,
     generalCost: 6,
     tags: ["support"],
+    preferredTerrain: ["forest", "shrine"],
     ability: "祈祷時、対象に装甲+6/1T。",
     abilityKey: "blessing",
     generalSkill: "味方が初めて倒れた時、全員HP+5。",
     generalKey: "firstFallHeal",
+    ultimate: { name: "胞子再生雲", turns: 4, key: "teamHeal" },
     front: "heal",
     middle: "heal",
     rear: "rally",
+    codexText: "霧状の胞子で傷口を覆い、群れの損耗を抑える菌糸種。",
   },
   priest: {
-    name: "プリースト",
+    name: "スポアコロニー",
+    rarity: "common",
+    classification: "fungi",
+    traits: ["mycelium", "poisonous"],
+    roles: ["heal"],
     hp: 102,
     at: 29,
     ag: 30,
     soldierCost: 4,
     generalCost: 6,
     tags: ["support"],
+    preferredTerrain: ["forest", "shrine"],
     ability: `治癒陣の回復量+${WIDE_PRAYER_BONUS}。`,
     abilityKey: "widePrayer",
     generalSkill: "味方が初めて倒れた時、全員HP+5。",
     generalKey: "firstFallHeal",
+    ultimate: { name: "菌糸再接続", turns: 5, key: "deepTeamHeal" },
     front: "heal",
     middle: "lineHeal",
     rear: "lineHeal",
+    codexText: "細い菌糸を同列に伸ばし、広域の再生を担う群体種。",
   },
   duelist: {
-    name: "ソード",
+    name: "ヴェロキラプトル",
+    rarity: "common",
+    classification: "reptile",
+    traits: ["dash", "predation"],
+    roles: ["attack"],
     hp: 110,
     at: 36,
     ag: 53,
     soldierCost: 4,
     generalCost: 6,
     tags: ["scout"],
+    preferredTerrain: ["plain", "forest"],
     ability: "HP満タン時、AG+5。",
     abilityKey: "quickStart",
     generalSkill: "自身が前列にいる間、与ダメージ+4。",
     generalKey: "frontDuel",
+    ultimate: { name: "連鎖裂爪", turns: 4, key: "alphaClaw" },
     front: "slash",
     middle: "raid",
     rear: "raid",
+    codexText: "小型ながら反応速度が高く、負傷個体を見逃さない捕食種。",
   },
   lancer: {
-    name: "ランス",
+    name: "トライホーン",
+    rarity: "common",
+    classification: "mammal",
+    traits: ["giant", "dash"],
+    roles: ["attack"],
     hp: 120,
     at: 39,
     ag: 36,
     soldierCost: 5,
     generalCost: 7,
     tags: ["assault"],
+    preferredTerrain: ["plain", "highland"],
     ability: "同段に敵が2体以上いる時、貫通ダメージ+2。",
     abilityKey: "laneBreaker",
     generalSkill: "3ターン目開始時、味方前列にAT+4。",
     generalKey: "turnThreeCharge",
+    ultimate: { name: "群角突進", turns: 5, key: "lineCrush" },
     front: "pierce",
     middle: "pierce",
     rear: "rally",
+    codexText: "硬質の三角を並べて突進し、同列をまとめて押し崩す大型草食種。",
   },
   scout: {
-    name: "ローグ",
+    name: "グラスマンティス",
+    rarity: "common",
+    classification: "insect",
+    traits: ["mimicry", "predation"],
+    roles: ["attack"],
     hp: 95,
     at: 35,
     ag: 47,
     soldierCost: 4,
     generalCost: 6,
     tags: ["scout"],
+    preferredTerrain: ["forest"],
     ability: `奇襲時、対象が中列ならダメージ+${MIDDLE_RAID_BONUS}。`,
     abilityKey: "middleRaid",
     generalSkill: `1ターン目、味方斥候のAG+${SCOUT_LEAD_AG}。`,
     generalKey: "scoutLead",
+    ultimate: { name: "透明化捕食", turns: 4, key: "rearExecution" },
     front: "slash",
     middle: "raid",
     rear: "raid",
+    codexText: "草原と森の境界に溶け込み、中後衛を刈り取る擬態昆虫。",
   },
   engineer: {
-    name: "ビルダー",
+    name: "バリアビートル",
+    rarity: "rare",
+    classification: "insect",
+    traits: ["carapace", "swarm"],
+    roles: ["defense", "support"],
     hp: 115,
     at: 24,
     ag: 28,
     soldierCost: 4,
     generalCost: 6,
     tags: ["support"],
+    preferredTerrain: ["rampart", "forest"],
     ability: `城壁上では守護の装甲+${RAMPART_GUARD_BONUS}。`,
     abilityKey: "rampartCraft",
     generalSkill: "自軍地形コスト-2として扱う。",
     generalKey: "terrainDiscount",
+    ultimate: { name: "巣壁構築", turns: 4, key: "frontBulwark" },
     front: "guard",
     middle: "guard",
     rear: "command",
+    codexText: "樹脂と土壌を固めて即席の巣壁を作る環境改変種。",
   },
   paladin: {
-    name: "パラディン",
+    name: "オブシディアンタートル",
+    rarity: "rare",
+    classification: "reptile",
+    traits: ["carapace", "aquatic", "giant"],
+    roles: ["defense", "heal"],
     hp: 125,
     at: 29,
     ag: 32,
     soldierCost: 5,
     generalCost: 7,
     tags: ["heavy", "support"],
+    preferredTerrain: ["sea", "rampart"],
     ability: `献身の装甲+${DEVOTED_WARD_BONUS}。`,
     abilityKey: "devotedWard",
     generalSkill: "開戦時、味方前列に装甲+12/1T。",
     generalKey: "frontArmor",
+    ultimate: { name: "黒曜甲羅", turns: 5, key: "alphaShell" },
     front: "slash",
     middle: "generalWard",
     rear: "generalWard",
+    codexText: "黒い鉱物質の甲羅を持ち、アルファ個体の前で要塞化する長寿種。",
   },
   strategist: {
-    name: "コマンダー",
+    name: "サンダーイール",
+    rarity: "common",
+    classification: "fish",
+    traits: ["aquatic", "electric"],
+    roles: ["support"],
     hp: 100,
     at: 26,
     ag: 39,
     soldierCost: 4,
     generalCost: 6,
     tags: ["support", "leader"],
+    preferredTerrain: ["sea"],
     ability: "指揮のAT補正+1。",
     abilityKey: "sharpCommand",
     generalSkill: "開戦時、味方中列にAG+6。",
     generalKey: "midAg",
+    ultimate: { name: "電位同期", turns: 4, key: "synapticSurge" },
     front: "slash",
     middle: "command",
     rear: "command",
+    codexText: "微弱な電位で同列の筋反応を同期させる水棲支援種。",
   },
   lord: {
-    name: "ロード",
+    name: "シナプスコア",
+    rarity: "legendary",
+    classification: "crystalLife",
+    traits: ["electric", "swarm"],
+    roles: ["support"],
     hp: 92,
     at: 25,
     ag: 37,
     soldierCost: 4,
     generalCost: 8,
     tags: ["support", "leader"],
-    ability: "大将スキル重視。兵時は標準的な支援役。",
+    preferredTerrain: ["shrine", "highland"],
+    ability: "α特性重視。通常時は標準的な支援役。",
     abilityKey: "none",
     generalSkill: `開戦時、味方全員にAT+${ALL_ORDER_AT}/AG+${ALL_ORDER_AG}/${ALL_ORDER_DURATION}T。`,
     generalKey: "allOutOrder",
+    ultimate: { name: "群知性起動", turns: 5, key: "synapticSurge" },
     front: "slash",
     middle: "command",
     rear: "rally",
+    codexText: "結晶核に群れの感覚を集約し、短時間だけ全個体を同調させる中枢体。",
   },
   breaker: {
-    name: "ブレイカー",
+    name: "ティラノファング",
+    rarity: "rare",
+    classification: "reptile",
+    traits: ["ancient", "predation", "giant"],
+    roles: ["attack"],
     hp: 125,
     at: 41,
     ag: 24,
     soldierCost: 5,
     generalCost: 7,
     tags: ["heavy", "assault"],
-    ability: "露出大将への破陣ダメージ+4。",
+    preferredTerrain: ["plain", "highland"],
+    ability: "露出αへの破陣ダメージ+4。",
     abilityKey: "generalBreaker",
-    generalSkill: "敵大将が前列へ出た時、自身にAT+6。",
+    generalSkill: "敵αが前衛へ出た時、自身にAT+6。",
     generalKey: "finishSignal",
+    ultimate: { name: "頂点捕食", turns: 5, key: "alphaClaw" },
     front: "siege",
     middle: "siege",
     rear: "wait",
+    codexText: "古代捕食者の再現個体。露出したアルファ個体へ一直線に圧をかける。",
   },
   cannoneer: {
-    name: "キャノン",
+    name: "ボルカノドレイク",
+    rarity: "rare",
+    classification: "dragon",
+    traits: ["flying", "giant", "ancient"],
+    roles: ["attack"],
     hp: 92,
     at: 43,
     ag: 18,
     soldierCost: 5,
     generalCost: 7,
     tags: ["ranged", "heavy"],
-    ability: `後列からの掃射ダメージ+${REAR_CANNON_BONUS}。`,
+    preferredTerrain: ["highland"],
+    ability: `後衛からの掃射ダメージ+${REAR_CANNON_BONUS}。`,
     abilityKey: "rearCannon",
-    generalSkill: "敵前列が2体以上なら、1ターン目に掃射。",
+    generalSkill: "敵前衛が2体以上なら、1ターン目に掃射。",
     generalKey: "openingBarrage",
+    ultimate: { name: "火山熱線", turns: 5, key: "wideScorch" },
     front: "slash",
     middle: "sweep",
     rear: "sweep",
+    codexText: "火山帯で観測される竜類。低AGだが、広範囲へ熱線を浴びせる。",
   },
   seer: {
-    name: "メイジ",
+    name: "ルミナクラゲ",
+    rarity: "common",
+    classification: "fish",
+    traits: ["aquatic", "electric", "mimicry"],
+    roles: ["support", "attack"],
     hp: 90,
     at: 32,
     ag: 33,
     soldierCost: 4,
     generalCost: 6,
     tags: ["support", "ranged"],
-    ability: "後列にいる間、受ける遠隔ダメージ-3。",
+    preferredTerrain: ["sea", "shrine"],
+    ability: "後衛にいる間、受ける遠隔ダメージ-3。",
     abilityKey: "rearWard",
-    generalSkill: "自軍大将が初めて中列へ出た時、全員に装甲+14/1T。",
+    generalSkill: "自軍αが初めて中衛へ出た時、全員に装甲+14/1T。",
     generalKey: "fallbackWard",
+    ultimate: { name: "発光パルス", turns: 4, key: "rearExecution" },
     front: "heal",
     middle: "snipe",
     rear: "command",
+    codexText: "発光器官で敵の視線を乱し、味方の行動タイミングを整える浮遊水棲種。",
   },
 };
+
+Object.values(cards).forEach((card) => {
+  card.cost ??= card.soldierCost;
+  card.alphaCost ??= card.generalCost;
+});
+
+const ultimateActions = {
+  alphaClaw: {
+    text: "露出αを優先し、単体に大ダメージ。",
+    components: [
+      { effectElements: ["singleAttack", "searchAttack"], targetPattern: "exposedAlphaOrFrontEnemy" },
+    ],
+    execute(state, unit, log) {
+      const targetGeneral = generalOf(state, opposite(unit.side));
+      const target = targetGeneral && isGeneralExposed(state, targetGeneral)
+        ? targetGeneral
+        : findFrontTarget(state, unit);
+      if (!target) return logNoTarget(unit, log);
+      dealDamage(state, unit, target, unitStats(state, unit).at + 16, unit.card.ultimate.name, log);
+    },
+  },
+  rearExecution: {
+    text: "敵中後衛の低HPを狙って大ダメージ。",
+    components: [
+      { effectElements: ["singleAttack", "searchAttack", "executeBonus"], targetPattern: "middleRearLowestHpEnemy" },
+    ],
+    execute(state, unit, log) {
+      const targets = enemies(state, unit.side).filter((enemy) => enemy.col >= 1);
+      const target = (targets.length ? targets : enemies(state, unit.side)).sort((a, b) => a.hp - b.hp)[0];
+      if (!target) return logNoTarget(unit, log);
+      dealDamage(state, unit, target, Math.max(12, unitStats(state, unit).at + 8), unit.card.ultimate.name, log);
+    },
+  },
+  lineCrush: {
+    text: "同列の敵を前から順に押し潰す。",
+    components: [
+      { effectElements: ["areaAttack"], targetPattern: "sameLaneFrontTwoEnemies" },
+    ],
+    execute(state, unit, log) {
+      const targets = enemies(state, unit.side)
+        .filter((enemy) => enemy.row === unit.row)
+        .sort((a, b) => a.col - b.col)
+        .slice(0, 3);
+      if (targets.length === 0) return logNoTarget(unit, log);
+      const at = unitStats(state, unit).at;
+      dealDamageGroup(
+        state,
+        unit,
+        targets.map((target, index) => ({ target, rawDamage: Math.max(8, at + 6 - index * 6) })),
+        unit.card.ultimate.name,
+        log,
+        uniqueCells(targets.map((target) => ({ side: target.side, row: target.row, col: target.col }))),
+      );
+    },
+  },
+  wideScorch: {
+    text: "敵全体に大きな範囲ダメージ。",
+    components: [
+      { effectElements: ["areaAttack"], targetPattern: "allEnemies" },
+    ],
+    execute(state, unit, log) {
+      const targets = enemies(state, unit.side);
+      if (targets.length === 0) return logNoTarget(unit, log);
+      const damage = Math.max(8, unitStats(state, unit).at - 4);
+      dealDamageGroup(
+        state,
+        unit,
+        targets.map((target) => ({ target, rawDamage: damage })),
+        unit.card.ultimate.name,
+        log,
+        rowsForCols(opposite(unit.side), [0, 1, 2]),
+      );
+    },
+  },
+  frontBulwark: {
+    text: "味方前衛全体に強い装甲を付与。",
+    components: [
+      { effectElements: ["armor"], targetPattern: "frontRankAllies" },
+    ],
+    execute(state, unit, log) {
+      const targets = living(state, unit.side).filter((ally) => ally.col === 0);
+      if (targets.length === 0) return logNoTarget(unit, log);
+      const armor = 18;
+      targets.forEach((target) => grantArmor(state, target, armor, STANDARD_ARMOR_DURATION));
+      log.push(`${unitLabel(unit)} の${unit.card.ultimate.name}: ${buffTargetSummary(targets)} に装甲+${armor}/${STANDARD_ARMOR_DURATION}T`);
+      recordBuffGroupFrame(log, state, unit, targets.map((target) => ({ targetId: target.id, armor, duration: STANDARD_ARMOR_DURATION })), `${unit.card.name} の${unit.card.ultimate.name}`);
+    },
+  },
+  teamBarrier: {
+    text: "味方全体に装甲を付与。",
+    components: [
+      { effectElements: ["armor"], targetPattern: "allAllies" },
+    ],
+    execute(state, unit, log) {
+      const targets = living(state, unit.side);
+      const armor = 12;
+      targets.forEach((target) => grantArmor(state, target, armor, STANDARD_ARMOR_DURATION));
+      log.push(`${unitLabel(unit)} の${unit.card.ultimate.name}: ${buffTargetSummary(targets)} に装甲+${armor}/${STANDARD_ARMOR_DURATION}T`);
+      recordBuffGroupFrame(log, state, unit, targets.map((target) => ({ targetId: target.id, armor, duration: STANDARD_ARMOR_DURATION })), `${unit.card.name} の${unit.card.ultimate.name}`);
+    },
+  },
+  teamHeal: {
+    text: "味方全体を回復する。",
+    components: [
+      { effectElements: ["heal"], targetPattern: "allAllies" },
+    ],
+    execute(state, unit, log) {
+      executeTeamHealUltimate(state, unit, Math.max(8, Math.floor(unitStats(state, unit).at * 0.55)), log);
+    },
+  },
+  deepTeamHeal: {
+    text: "味方全体を大きく回復する。",
+    components: [
+      { effectElements: ["heal"], targetPattern: "allAllies" },
+    ],
+    execute(state, unit, log) {
+      executeTeamHealUltimate(state, unit, Math.max(12, Math.floor(unitStats(state, unit).at * 0.75)), log);
+    },
+  },
+  alphaShell: {
+    text: "味方αに強い装甲と回復を与える。",
+    components: [
+      { effectElements: ["armor", "heal"], targetPattern: "allyAlpha" },
+    ],
+    execute(state, unit, log) {
+      const target = generalOf(state, unit.side);
+      if (!target || target.hp <= 0) return logNoTarget(unit, log);
+      const armor = 26;
+      const amount = Math.max(10, Math.floor(unitStats(state, unit).at * 0.55));
+      grantArmor(state, target, armor, STANDARD_ARMOR_DURATION);
+      const healed = heal(target, amount);
+      log.push(`${unitLabel(unit)} の${unit.card.ultimate.name}: ${unitLabel(target)} に装甲+${armor}/${STANDARD_ARMOR_DURATION}T、HP${healed}回復`);
+      recordFrame(log, state, {
+        type: "heal",
+        sourceId: unit.id,
+        targetId: target.id,
+        amount: healed,
+        healEvents: healed > 0 ? [{ targetId: target.id, amount: healed }] : [],
+        buffEvents: [{ targetId: target.id, armor, duration: STANDARD_ARMOR_DURATION }],
+        text: `${unit.card.name} の${unit.card.ultimate.name}`,
+      });
+    },
+  },
+  synapticSurge: {
+    text: "味方全体にAT/AG強化。",
+    components: [
+      { effectElements: ["atBuff", "agBuff"], targetPattern: "allAllies" },
+    ],
+    execute(state, unit, log) {
+      const targets = living(state, unit.side);
+      const atBonus = 4;
+      const agBonus = 7;
+      targets.forEach((target) => {
+        grantStatBuff(state, target, "at", atBonus, COMMAND_DURATION);
+        grantStatBuff(state, target, "ag", agBonus, COMMAND_DURATION);
+      });
+      log.push(`${unitLabel(unit)} の${unit.card.ultimate.name}: ${buffTargetSummary(targets)} にAT+${atBonus}/AG+${agBonus}/${COMMAND_DURATION}T`);
+      recordBuffGroupFrame(log, state, unit, targets.map((target) => ({ targetId: target.id, at: atBonus, ag: agBonus, duration: COMMAND_DURATION })), `${unit.card.name} の${unit.card.ultimate.name}`);
+    },
+  },
+};
+
+const ACTION_SLOTS = Object.freeze([
+  { id: "front", cardKey: "front", label: TERMS.ranks[0], shortLabel: TERMS.rankShort[0] },
+  { id: "middle", cardKey: "middle", label: TERMS.ranks[1], shortLabel: TERMS.rankShort[1] },
+  { id: "rear", cardKey: "rear", label: TERMS.ranks[2], shortLabel: TERMS.rankShort[2] },
+]);
+
+const ACTION_METADATA = Object.freeze(Object.fromEntries(Object.entries(actions).map(([id, action]) => [
+  id,
+  Object.freeze({
+    name: action.name,
+    text: action.text,
+    components: Object.freeze(actionComponents(id).map((component) => Object.freeze({
+      effectElements: Object.freeze([...component.effectElements]),
+      targetPattern: component.targetPattern,
+    }))),
+  }),
+])));
+
+const CARD_ACTION_SEARCH_INDEX = Object.freeze(buildCardActionSearchIndex(cards).map((record) => Object.freeze(record)));
 
 const presets = [
   {
     id: "guard",
-    name: "王道護衛",
+    name: "甲殻前線",
     kind: "model",
     general: "captain",
     units: [
@@ -574,7 +1226,7 @@ const presets = [
   },
   {
     id: "raid",
-    name: "後列奇襲",
+    name: "擬態奇襲",
     kind: "model",
     general: "scout",
     units: [
@@ -593,7 +1245,7 @@ const presets = [
   },
   {
     id: "sea",
-    name: "海陣防衛",
+    name: "礁壁海域",
     kind: "model",
     general: "tideguard",
     units: [
@@ -612,7 +1264,7 @@ const presets = [
   },
   {
     id: "charge",
-    name: "前線突破",
+    name: "巨角突破",
     kind: "model",
     general: "lancer",
     units: [
@@ -631,9 +1283,9 @@ const presets = [
   },
   {
     id: "terrain-guard",
-    name: "地形: 城壁護衛",
+    name: "地形: 巣壁防衛",
     kind: "terrain",
-    description: "城壁上のビルダーを軸に、守護と回復で前線を固定する。",
+    description: "城壁上のバリアビートルを軸に、装甲と回復で前線を固定する。",
     general: "engineer",
     units: [
       ["engineer", 0, 0],
@@ -651,9 +1303,9 @@ const presets = [
   },
   {
     id: "terrain-raid",
-    name: "地形: 森奇襲",
+    name: "地形: 森擬態",
     kind: "terrain",
-    description: "森のAG補正でローグ大将をさらに速くし、後列へ圧をかける。",
+    description: "森のAG補正でグラスマンティスαをさらに速くし、後衛へ圧をかける。",
     general: "scout",
     units: [
       ["duelist", 0, 0],
@@ -671,9 +1323,9 @@ const presets = [
   },
   {
     id: "terrain-sea",
-    name: "地形: 海陣",
+    name: "地形: 海域α",
     kind: "terrain",
-    description: "海上のシールド大将を強化し、海/城壁対象の大将スキルを見せる。",
+    description: "海上のリーフバスティオンαを強化し、海/城壁対象のα特性を見せる。",
     general: "tideguard",
     units: [
       ["engineer", 0, 0],
@@ -691,9 +1343,9 @@ const presets = [
   },
   {
     id: "terrain-highland",
-    name: "地形: 高地砲撃",
+    name: "地形: 高地熱線",
     kind: "terrain",
-    description: "高地キャノンの後列掃射で、前列崩しを早める。",
+    description: "高地ボルカノドレイクの後衛掃射で、前衛崩しを早める。",
     general: "lancer",
     units: [
       ["duelist", 0, 0],
@@ -711,9 +1363,9 @@ const presets = [
   },
   {
     id: "lesson-sweep",
-    name: "教材: 鼓舞掃射",
+    name: "教材: 共鳴掃射",
     kind: "lesson",
-    lesson: "ATアップを先に入れて、掃射で前列全体を削る。",
+    lesson: "ATアップを先に入れて、掃射で前衛全体を削る。",
     general: "cannoneer",
     units: [
       ["captain", 0, 0],
@@ -731,9 +1383,9 @@ const presets = [
   },
   {
     id: "lesson-speed",
-    name: "教材: 先制集中",
+    name: "教材: 電位集中",
     kind: "lesson",
-    lesson: "AGアップで行動順を作り、同じレーンへ攻撃を集中する。",
+    lesson: "AGアップで行動順を作り、同列へ攻撃を集中する。",
     general: "scout",
     units: [
       ["duelist", 0, 0],
@@ -751,7 +1403,7 @@ const presets = [
   },
   {
     id: "lesson-armor",
-    name: "教材: 装甲護衛",
+    name: "教材: 甲殻護衛",
     kind: "lesson",
     lesson: "装甲付与で当該ターンの被ダメージを抑え、前線を長く維持する。",
     general: "captain",
@@ -771,7 +1423,7 @@ const presets = [
   },
   {
     id: "lesson-heal",
-    name: "教材: 回復粘り",
+    name: "教材: 菌糸再生",
     kind: "lesson",
     lesson: "一撃で落ちない耐久を作り、単体回復と治癒陣で確定数をずらす。",
     general: "oracle",
@@ -791,9 +1443,9 @@ const presets = [
   },
   {
     id: "lesson-general-skill",
-    name: "教材: 大将スキル軸",
+    name: "教材: α特性軸",
     kind: "lesson",
-    lesson: "ステータス控えめのロード大将を守り、開戦全体バフで初動を作る。",
+    lesson: "ステータス控えめのシナプスコアαを守り、開戦全体バフで初動を作る。",
     general: "lord",
     units: [
       ["breaker", 0, 0],
@@ -811,9 +1463,9 @@ const presets = [
   },
   {
     id: "lesson-ace-general",
-    name: "教材: エース大将",
+    name: "教材: 頂点α",
     kind: "lesson",
-    lesson: "高ステータス大将にAT/AG/装甲/回復支援を集めて突破する。",
+    lesson: "高ステータスαにAT/AG/装甲/回復支援を集めて突破する。",
     general: "breaker",
     units: [
       ["lancer", 0, 0],
@@ -978,7 +1630,7 @@ function renderCardPicker() {
   els.cardPicker.innerHTML = "";
   els.cardPicker.append(new Option("空きマス", "__empty"));
   Object.entries(cards).forEach(([cardId, card]) => {
-    els.cardPicker.append(new Option(`${card.name} / 兵${card.soldierCost} 将${card.generalCost}`, cardId));
+    els.cardPicker.append(new Option(`${card.name} / ${cardCostPairText(card)}`, cardId));
   });
   els.cardPicker.value = selectedCardId || "duelist";
 }
@@ -1022,7 +1674,7 @@ function renderCardLibrary() {
     item.innerHTML = `
       <div class="library-card-head">
         <strong>${card.name}</strong>
-        <span class="library-cost">兵${card.soldierCost} 将${card.generalCost}</span>
+        <span class="library-cost">${cardCostPairShort(card)}</span>
       </div>
       <div class="library-stat-grid">
         <span><b>HP</b>${card.hp}</span>
@@ -1030,11 +1682,11 @@ function renderCardLibrary() {
         <span><b>AG</b>${card.ag}</span>
       </div>
       <div class="library-action-grid">
-        <span><b>前</b>${actionTermMarkup(card.front)}</span>
-        <span><b>中</b>${actionTermMarkup(card.middle)}</span>
-        <span><b>後</b>${actionTermMarkup(card.rear)}</span>
+        <span><b>${TERMS.rankShort[0]}</b>${actionTermMarkup(card.front)}</span>
+        <span><b>${TERMS.rankShort[1]}</b>${actionTermMarkup(card.middle)}</span>
+        <span><b>${TERMS.rankShort[2]}</b>${actionTermMarkup(card.rear)}</span>
       </div>
-      <div class="tag-line">${card.tags.map((tag) => termMarkup(tagLabel(tag), tagSpecText(tag))).join("")}</div>
+      <div class="tag-line">${cardBadgeMarkup(card)}</div>
     `;
     item.addEventListener("click", () => {
       selectedCardId = cardId;
@@ -1069,7 +1721,9 @@ function terrainTermMarkup(terrainKey) {
 }
 
 function termMarkup(label, description) {
-  return `<span class="term" title="${attrEscape(description)}" data-tooltip="${attrEscape(description)}">${label}</span>`;
+  const text = uiText(label);
+  const tooltip = uiText(description);
+  return `<span class="term" title="${attrEscape(tooltip)}" data-tooltip="${attrEscape(tooltip)}">${text}</span>`;
 }
 
 function attrEscape(value) {
@@ -1087,7 +1741,7 @@ function presetOptionLabel(preset) {
     lesson: "教材",
     custom: "登録",
   };
-  return `${labels[preset.kind] || "デッキ"}: ${preset.name}`;
+  return uiText(`${labels[preset.kind] || TERMS.deck}: ${preset.name}`);
 }
 
 function applyPresetToSide(side, presetId) {
@@ -1166,7 +1820,7 @@ function setGeneralByUnitId(unitId) {
   selectedUnitId = unit.id;
   selectedCardId = unit.cardId;
   els.cardPicker.value = unit.cardId;
-  setEditorMessage(`${unit.side === "player" ? "自軍" : "敵軍"}の${unit.card.name}を大将に指定しました。`);
+  setEditorMessage(`${sideLabel(unit.side)}の${unit.card.name}を大将に指定しました。`);
   renderSetup();
 }
 
@@ -1206,7 +1860,7 @@ function editTerrainSlot(side, row, col, terrainId) {
   const grid = side === "player" ? setup.playerTerrain : setup.enemyTerrain;
   grid[row][col] = terrainId;
   selectedUnitId = null;
-  setEditorMessage(`${side === "player" ? "自軍" : "敵軍"} ${ROW_LABELS[row]}${COL_LABELS[col]}を${terrainTypes[terrainId].name}に変更しました。`);
+  setEditorMessage(`${sideLabel(side)} ${ROW_LABELS[row]}${COL_LABELS[col]}を${terrainTypes[terrainId].name}に変更しました。`);
   renderSetup();
 }
 
@@ -1226,7 +1880,7 @@ function saveCurrentDeck() {
     return;
   }
   if (cost.total > COST_LIMIT) {
-    setEditorMessage(`Cost ${cost.total}/${COST_LIMIT}です。`);
+    setEditorMessage(`${TERMS.cost} ${cost.total}/${COST_LIMIT}です。`);
     return;
   }
   const rawName = els.deckName.value.trim();
@@ -1269,7 +1923,7 @@ function deleteCurrentDeck() {
 }
 
 function setEditorMessage(message) {
-  if (els.editorMessage) els.editorMessage.textContent = message;
+  if (els.editorMessage) els.editorMessage.textContent = uiText(message);
 }
 
 function renderSetup() {
@@ -1284,7 +1938,7 @@ function renderSetup() {
   renderCardLibrary();
   renderLog(["編成を選択済み。戦闘開始で大将撃破まで自動解決を実行。"]);
   els.winnerSummary.textContent = "未実行";
-  els.phaseSummary.textContent = setupConceptText();
+  els.phaseSummary.textContent = uiText(setupConceptText());
   els.turnCount.textContent = "0T";
   els.playReplay.disabled = true;
   els.playReplay.textContent = "リプレイ再生";
@@ -1318,7 +1972,7 @@ function runBattle() {
   renderCosts(stats.replay.state);
   renderLog(stats.replay.log.entries);
   els.winnerSummary.textContent = seriesResultLabel(stats);
-  els.phaseSummary.textContent = summarizeSeries(stats);
+  els.phaseSummary.textContent = uiText(summarizeSeries(stats));
   els.turnCount.textContent = `${stats.averageTurns.toFixed(1)}T avg`;
   els.playReplay.disabled = stats.replay.log.frames.length === 0;
   els.playReplay.textContent = "代表戦リプレイ";
@@ -1344,6 +1998,7 @@ function simulateBattle(options = {}) {
     resetTurnFlags(state);
     applyTerrainTurnStart(state, log);
     applyGeneralSkills(state, log, "turnStart");
+    chargeUltimates(state);
 
     const actedIds = new Set();
     while (true) {
@@ -1484,11 +2139,11 @@ function runRoundRobin() {
       <div class="result-cell"><span>最低勝率</span><strong>${totals.worst.winRate}%</strong></div>
     </div>
     <div class="terrain-item">
-      <strong>総合トップ: ${totals.best.name}</strong>
-      <span>総合最下位: ${totals.worst.name}。まずはこの差を見てコストや地形相性を調整。</span>
+      <strong>総合トップ: ${uiText(totals.best.name)}</strong>
+      <span>総合最下位: ${uiText(totals.worst.name)}。まずはこの差を見てコストや地形相性を調整。</span>
     </div>
   `;
-  els.phaseSummary.textContent = `モデル総当たり ${targetPresets.length * targetPresets.length}組を各${MATCH_BATTLE_COUNT}戦で集計。教材デッキは手動対戦で確認。`;
+  els.phaseSummary.textContent = uiText(`モデル総当たり ${targetPresets.length * targetPresets.length}組を各${MATCH_BATTLE_COUNT}戦で集計。教材デッキは手動対戦で確認。`);
   els.winnerSummary.textContent = "モデル総当たり完了";
 }
 
@@ -1524,20 +2179,20 @@ function renderMatchupSummary(stats) {
   els.matchupBadge.textContent = seriesResultLabel(stats);
   els.matchupSummary.innerHTML = `
     <div class="result-grid">
-      <div class="result-cell"><span>自軍勝率</span><strong>${percent(stats.playerWinRate)}%</strong></div>
-      <div class="result-cell"><span>自軍勝利</span><strong>${stats.playerWins}</strong></div>
-      <div class="result-cell"><span>敵軍勝利</span><strong>${stats.enemyWins}</strong></div>
+      <div class="result-cell"><span>${TERMS.playerSide}勝率</span><strong>${percent(stats.playerWinRate)}%</strong></div>
+      <div class="result-cell"><span>${TERMS.playerSide}勝利</span><strong>${stats.playerWins}</strong></div>
+      <div class="result-cell"><span>${TERMS.enemySide}勝利</span><strong>${stats.enemyWins}</strong></div>
       <div class="result-cell"><span>引き分け</span><strong>${stats.draws}</strong></div>
     </div>
     <div class="terrain-item">
-      <strong>${getPreset(stats.playerPresetId).name} vs ${getPreset(stats.enemyPresetId).name}</strong>
+      <strong>${uiText(getPreset(stats.playerPresetId).name)} vs ${uiText(getPreset(stats.enemyPresetId).name)}</strong>
       <span>${stats.battles}戦 / 平均${stats.averageTurns.toFixed(1)}ターン。代表戦はリプレイで確認できます。</span>
     </div>
   `;
 }
 
 function renderRoundRobin(matrix, targetPresets) {
-  const header = targetPresets.map((preset) => `<th scope="col">${preset.name}</th>`).join("");
+  const header = targetPresets.map((preset) => `<th scope="col">${uiText(preset.name)}</th>`).join("");
   const rows = matrix.map((row, rowIndex) => {
     const cells = row.map((stats) => {
       const rate = percent(stats.playerWinRate);
@@ -1551,36 +2206,36 @@ function renderRoundRobin(matrix, targetPresets) {
         </td>
       `;
     }).join("");
-    return `<tr><th scope="row">${targetPresets[rowIndex].name}</th>${cells}</tr>`;
+    return `<tr><th scope="row">${uiText(targetPresets[rowIndex].name)}</th>${cells}</tr>`;
   }).join("");
 
   els.roundRobinTable.innerHTML = `
     <table>
-      <thead><tr><th scope="col">自軍＼敵軍</th>${header}</tr></thead>
+      <thead><tr><th scope="col">${TERMS.playerSide}＼${TERMS.enemySide}</th>${header}</tr></thead>
       <tbody>${rows}</tbody>
     </table>
   `;
 }
 
 function seriesResultLabel(stats) {
-  if (stats.matchResult === "player") return `自軍勝利 ${stats.playerWins}-${stats.enemyWins}`;
-  if (stats.matchResult === "enemy") return `敵軍勝利 ${stats.playerWins}-${stats.enemyWins}`;
+  if (stats.matchResult === "player") return `${TERMS.playerSide}勝利 ${stats.playerWins}-${stats.enemyWins}`;
+  if (stats.matchResult === "enemy") return `${TERMS.enemySide}勝利 ${stats.playerWins}-${stats.enemyWins}`;
   return `引き分け ${stats.playerWins}-${stats.enemyWins}`;
 }
 
 function summarizeSeries(stats) {
-  return `${MATCH_BATTLE_COUNT}戦判定: 自軍${stats.playerWins}勝 / 敵軍${stats.enemyWins}勝 / 引き分け${stats.draws}。平均${stats.averageTurns.toFixed(1)}ターン。`;
+  return `${MATCH_BATTLE_COUNT}戦判定: ${TERMS.playerSide}${stats.playerWins}勝 / ${TERMS.enemySide}${stats.enemyWins}勝 / 引き分け${stats.draws}。平均${stats.averageTurns.toFixed(1)}ターン。`;
 }
 
 function setupConceptText() {
   const player = getPreset(setup.playerPreset);
   const enemy = getPreset(setup.enemyPreset);
-  return `大将撃破で即勝利。自軍: ${presetConceptText(player)} / 敵軍: ${presetConceptText(enemy)}`;
+  return `${TERMS.alphaDefeat}で即勝利。${TERMS.playerSide}: ${presetConceptText(player)} / ${TERMS.enemySide}: ${presetConceptText(enemy)}`;
 }
 
 function presetConceptText(preset) {
-  if (preset.lesson) return preset.lesson;
-  return `${preset.name}のモデル配置`;
+  if (preset.lesson) return uiText(preset.lesson);
+  return uiText(`${preset.name}のモデル配置`);
 }
 
 function percent(rate) {
@@ -1631,14 +2286,14 @@ function snapshotBattleState(state) {
 function progressSignature(state) {
   return state.units
     .filter((unit) => unit.hp > 0 || unit.general)
-    .map((unit) => `${unit.id}:${unit.hp}:${unit.row}:${unit.col}`)
+    .map((unit) => `${unit.id}:${unit.hp}:${unit.row}:${unit.col}:${unit.ultimateCharge || 0}`)
     .sort()
     .join("|");
 }
 
 function resultLabel(result) {
-  if (result === "player") return "自軍勝利";
-  if (result === "enemy") return "敵軍勝利";
+  if (result === "player") return `${TERMS.playerSide}勝利`;
+  if (result === "enemy") return `${TERMS.enemySide}勝利`;
   if (result === "draw") return "引き分け";
   return "未実行";
 }
@@ -1660,7 +2315,7 @@ function playReplay() {
     renderLog(lastBattleLog.entries, frame.logIndex);
     renderSelectedCard(frame.state);
     if (frame.text) {
-      els.phaseSummary.textContent = frame.text;
+      els.phaseSummary.textContent = uiText(frame.text);
     }
     els.turnCount.textContent = `${frame.state.turn}T`;
     frameIndex += 1;
@@ -1677,7 +2332,7 @@ function playReplay() {
       renderCosts(lastBattleLog.finalState);
       renderLog(lastBattleLog.entries);
       els.winnerSummary.textContent = resultLabel(lastBattleLog.result);
-      els.phaseSummary.textContent = summarizeBattle(lastBattleLog.finalState, lastBattleLog.result);
+      els.phaseSummary.textContent = uiText(summarizeBattle(lastBattleLog.finalState, lastBattleLog.result));
       els.turnCount.textContent = `${lastBattleLog.finalState.turn}T`;
       els.playReplay.disabled = false;
       els.playReplay.textContent = "リプレイ再生";
@@ -1812,6 +2467,7 @@ function createUnits(side, preset, terrainGrid) {
       tempAg: 0,
       armorEffects: [],
       statEffects: [],
+      ultimateCharge: 0,
       firstHitReduced: false,
       movedFromRear: false,
       terrain: terrain.name,
@@ -1934,6 +2590,14 @@ function resetTurnFlags(state) {
   });
 }
 
+function chargeUltimates(state) {
+  allLiving(state).forEach((unit) => {
+    if (!unit.card.ultimate) return;
+    const limit = unit.card.ultimate.turns;
+    unit.ultimateCharge = Math.min(limit, (unit.ultimateCharge || 0) + 1);
+  });
+}
+
 function nextActingBatch(state, actedIds) {
   const candidates = allLiving(state)
     .filter((unit) => !actedIds.has(unit.id))
@@ -1943,10 +2607,10 @@ function nextActingBatch(state, actedIds) {
   const topAg = candidates[0].ag;
   const topCandidates = candidates.filter((candidate) => candidate.ag === topAg);
   const first = topCandidates[0].unit;
-  const firstAction = actionFor(first);
+  const firstAction = battleActionFor(first);
   const simultaneousUnits = topCandidates
     .map((candidate) => candidate.unit)
-    .filter((unit) => unit.cardId === first.cardId && actionFor(unit) === firstAction);
+    .filter((unit) => unit.cardId === first.cardId && battleActionFor(unit) === firstAction);
   if (simultaneousUnits.length >= 2 && new Set(simultaneousUnits.map((unit) => unit.side)).size >= 2) {
     return { simultaneous: true, actionKey: firstAction, units: simultaneousUnits };
   }
@@ -1954,6 +2618,13 @@ function nextActingBatch(state, actedIds) {
 }
 
 function executeActionBatch(state, batch, log) {
+  if (isUltimateActionKey(batch.actionKey)) {
+    batch.units.forEach((unit) => {
+      if (!batch.simultaneous && unit.hp <= 0) return;
+      executeUltimate(state, unit, log);
+    });
+    return;
+  }
   if (batch.simultaneous && batch.actionKey === "guard") {
     batch.units.forEach((unit) => executeGuardProtection(state, unit, log));
     batch.units.forEach((unit) => executeGuardStrike(state, unit, log));
@@ -1969,6 +2640,27 @@ function executeActionBatch(state, batch, log) {
     const action = actions[actionFor(unit)];
     action.execute(state, unit, log);
   });
+}
+
+function battleActionFor(unit) {
+  return ultimateReady(unit) ? `ultimate:${unit.card.ultimate.key}` : actionFor(unit);
+}
+
+function ultimateReady(unit) {
+  return Boolean(unit.card.ultimate && (unit.ultimateCharge || 0) >= unit.card.ultimate.turns);
+}
+
+function isUltimateActionKey(actionKey) {
+  return String(actionKey).startsWith("ultimate:");
+}
+
+function executeUltimate(state, unit, log) {
+  const ultimate = unit.card.ultimate;
+  const action = ultimateActions[ultimate?.key];
+  if (!ultimate || !action) return;
+  log.push(`${unitLabel(unit)} の必殺技: ${ultimate.name}`);
+  unit.ultimateCharge = 0;
+  action.execute(state, unit, log);
 }
 
 function actionFor(unit) {
@@ -2056,6 +2748,24 @@ function executePrayerStrike(state, unit, log) {
   dealDamage(state, unit, target, prayerStrikeDamageFor(state, unit), "祈祷弾", log);
 }
 
+function executeTeamHealUltimate(state, unit, amount, log) {
+  const targets = living(state, unit.side).filter((ally) => ally.hp < ally.maxHp);
+  if (targets.length === 0) return logNoTarget(unit, log);
+  const healEvents = targets
+    .map((target) => ({ target, targetId: target.id, amount: heal(target, amount) }))
+    .filter((event) => event.amount > 0);
+  if (healEvents.length === 0) return logNoTarget(unit, log);
+  log.push(`${unitLabel(unit)} の${unit.card.ultimate.name}: ${buffTargetSummary(healEvents.map((event) => event.target))} が${amount}回復`);
+  recordFrame(log, state, {
+    type: "heal",
+    sourceId: unit.id,
+    targetId: healEvents[0].targetId,
+    amount: healEvents[0].amount,
+    healEvents: healEvents.map((event) => ({ targetId: event.targetId, amount: event.amount })),
+    text: `${unit.card.name} の${unit.card.ultimate.name}`,
+  });
+}
+
 function grantArmor(state, unit, amount, durationTurns = STANDARD_ARMOR_DURATION) {
   if (!unit.armorEffects) unit.armorEffects = [];
   unit.armorEffects.push({
@@ -2107,9 +2817,9 @@ function activeStatDuration(state, unit, stat) {
 
 function armorStatusText(state, unit, total) {
   const effects = (unit.armorEffects || []).filter((effect) => effect.expiresOnTurn >= state.turn);
-  if (effects.length === 0) return `装甲 ${total}`;
+  if (effects.length === 0) return `${TERMS.armor} ${total}`;
   const duration = Math.max(...effects.map((effect) => effect.duration || STANDARD_ARMOR_DURATION));
-  return `装甲 ${total}/${duration}T`;
+  return `${TERMS.armor} ${total}/${duration}T`;
 }
 
 function commandAtBonusFor(unit) {
@@ -2133,7 +2843,7 @@ function dealDamage(state, source, target, rawDamage, actionName, log) {
   dealDamageGroup(state, source, [{ target, rawDamage }], actionName, log);
 }
 
-function dealDamageGroup(state, source, targetSpecs, actionName, log) {
+function dealDamageGroup(state, source, targetSpecs, actionName, log, rangeCellsOverride = null) {
   const events = targetSpecs
     .filter((spec) => spec.target && spec.target.hp > 0)
     .map((spec) => ({
@@ -2143,7 +2853,7 @@ function dealDamageGroup(state, source, targetSpecs, actionName, log) {
     }));
   if (events.length === 0) return logNoTarget(source, log);
 
-  const rangeCells = rangeCellsForAction(state, source, actionName, events[0].target);
+  const rangeCells = rangeCellsOverride || rangeCellsForAction(state, source, actionName, events[0].target);
   const beforeState = snapshotBattleState(state);
   events.forEach((event) => {
     event.target.hp = Math.max(0, event.target.hp - event.damage);
@@ -2324,10 +3034,10 @@ function summarizeBattle(state, winner) {
   const playerHp = playerGeneral ? `${playerGeneral.hp}/${playerGeneral.maxHp}` : "0";
   const enemyHp = enemyGeneral ? `${enemyGeneral.hp}/${enemyGeneral.maxHp}` : "0";
   if (winner === "draw") {
-    return `引き分け。大将HP 自軍 ${playerHp} / 敵軍 ${enemyHp}。`;
+    return `引き分け。${TERMS.alpha}HP ${TERMS.playerSide} ${playerHp} / ${TERMS.enemySide} ${enemyHp}。`;
   }
-  const winnerText = winner === "player" ? "自軍" : "敵軍";
-  return `${winnerText}勝利。大将HP 自軍 ${playerHp} / 敵軍 ${enemyHp}。`;
+  const winnerText = winner === "player" ? TERMS.playerSide : TERMS.enemySide;
+  return `${winnerText}勝利。${TERMS.alpha}HP ${TERMS.playerSide} ${playerHp} / ${TERMS.enemySide} ${enemyHp}。`;
 }
 
 function rangeCellsForAction(state, source, actionName, target) {
@@ -2418,11 +3128,11 @@ function actingTiePriority(unit) {
 }
 
 function unitActionCost(unit) {
-  return unit.general ? unit.card.generalCost : unit.card.soldierCost;
+  return unit.general ? alphaCardCost(unit.card) : normalCardCost(unit.card);
 }
 
 function unitLabel(unit) {
-  const mark = unit.general ? "大将" : "兵";
+  const mark = unit.general ? TERMS.alpha : TERMS.normal;
   return `${unit.card.name}(${mark}/${unit.side === "player" ? "自" : "敵"})`;
 }
 
@@ -2460,7 +3170,7 @@ function renderBoard(side, state, root) {
       }
       slot.style.gridColumn = `${row + 1}`;
       slot.style.gridRow = `${side === "enemy" ? 3 - col : col + 1}`;
-      slot.setAttribute("aria-label", `${side === "player" ? "自軍" : "敵軍"} ${ROW_LABELS[row]} ${COL_LABELS[col]}`);
+      slot.setAttribute("aria-label", `${sideLabel(side)} ${ROW_LABELS[row]} ${COL_LABELS[col]}`);
       slot.addEventListener("click", () => {
         handleSlotClick(side, row, col, unit, state);
       });
@@ -2567,7 +3277,7 @@ function unitMarkup(state, unit) {
   return `
     <div class="unit">
       <div class="unit-name">
-        ${unit.general ? '<span class="general-mark">将</span>' : ""}
+        ${unit.general ? `<span class="general-mark">${TERMS.alpha}</span>` : ""}
         <span>${unit.card.name}</span>
         <span class="unit-cost">${cardCostLabel(unit)}</span>
       </div>
@@ -2589,16 +3299,18 @@ function cardPopoverMarkup(state, unit) {
   return `
     <div class="card-popover">
       <div class="popover-head">
-        <strong>${unit.card.name}${unit.general ? " / 大将" : ""}</strong>
+        <strong>${unit.card.name}${unit.general ? ` / ${TERMS.alpha}` : ""}</strong>
         <span>HP ${unit.maxHp} / AT ${stats.at} / AG ${stats.ag}</span>
       </div>
+      <div class="tag-line">${cardBadgeMarkup(unit.card)}</div>
       <div class="popover-actions">
-        ${actionVisualMarkup(state, unit, "前", unit.card.front)}
-        ${actionVisualMarkup(state, unit, "中", unit.card.middle)}
-        ${actionVisualMarkup(state, unit, "後", unit.card.rear)}
+        ${actionVisualMarkup(state, unit, TERMS.rankShort[0], unit.card.front)}
+        ${actionVisualMarkup(state, unit, TERMS.rankShort[1], unit.card.middle)}
+        ${actionVisualMarkup(state, unit, TERMS.rankShort[2], unit.card.rear)}
       </div>
-      <div class="popover-note"><b>能力</b><span>${unit.card.ability}</span></div>
-      <div class="popover-note"><b>大将</b><span>${unit.card.generalSkill}</span></div>
+      ${ultimatePopoverMarkup(state, unit)}
+      <div class="popover-note"><b>能力</b><span>${uiText(unit.card.ability)}</span></div>
+      <div class="popover-note"><b>${TERMS.alphaTrait}</b><span>${uiText(unit.card.generalSkill)}</span></div>
     </div>
   `;
 }
@@ -2614,7 +3326,7 @@ function actionVisualMarkup(state, unit, label, actionKey) {
         <em>${diagram.sideLabel}</em>
       </div>
       ${diagramMarkup(diagram)}
-      <p>${actionFormulaText(state, unit, actionKey)}</p>
+      <p>${uiText(actionFormulaText(state, unit, actionKey))}</p>
     </div>
   `;
 }
@@ -2667,9 +3379,7 @@ function rowsForDiagramCols(cols) {
 }
 
 function cellShortLabel(row, col) {
-  if (col === 0) return ["上前", "中前", "下前"][row];
-  if (col === 1) return ["上中", "中中", "下中"][row];
-  return ["上後", "中後", "下後"][row];
+  return `${TERMS.laneShort[row]}${TERMS.rankShort[col]}`;
 }
 
 function effectValueMarkup(unit) {
@@ -2697,7 +3407,7 @@ function effectValueMarkup(unit) {
 function statusMarkup(state, unit) {
   const statuses = unitStatuses(state, unit);
   if (statuses.length === 0) return "";
-  return `<div class="status-line">${statuses.map((status) => `<span class="status-chip ${status.tone ? `${status.tone}-chip` : ""}">${status.label}</span>`).join("")}</div>`;
+  return `<div class="status-line">${statuses.map((status) => `<span class="status-chip ${status.tone ? `${status.tone}-chip` : ""}">${uiText(status.label)}</span>`).join("")}</div>`;
 }
 
 function unitStatuses(state, unit) {
@@ -2713,13 +3423,19 @@ function unitStatuses(state, unit) {
   if (unit.tempAg !== 0) statuses.push(statStatus("AG", unit.tempAg));
   if (passiveAtDelta !== 0) statuses.push(statStatus("AT", passiveAtDelta));
   if (passiveAgDelta !== 0) statuses.push(statStatus("AG", passiveAgDelta));
+  if (unit.card.ultimate) {
+    statuses.push({
+      label: ultimateChargeText(unit),
+      tone: ultimateReady(unit) ? "buff" : "",
+    });
+  }
   const incoming = unitStats(state, unit, { kind: "incoming", damage: 0 });
   const terrainId = state.terrain[unit.side][unit.row][unit.col];
   if (incoming.armor > 0) statuses.push({ label: armorStatusText(state, unit, incoming.armor), tone: "guard" });
   if (unit.card.abilityKey === "steady") statuses.push({ label: unit.firstHitReduced ? "初回済" : "初回-2", tone: "guard" });
   if (unit.card.abilityKey === "rearWard" && unit.col === 2) statuses.push({ label: "遠隔-3", tone: "guard" });
   if (terrainId === "rampart" && unit.col === 0) statuses.push({ label: "城壁-4", tone: "guard" });
-  if (unit.general && !isGeneralExposed(state, unit)) statuses.push({ label: "大将護衛", tone: "guard" });
+  if (unit.general && !isGeneralExposed(state, unit)) statuses.push({ label: TERMS.alphaGuarded, tone: "guard" });
   return statuses;
 }
 
@@ -2757,7 +3473,7 @@ function buffLabelsForActiveFrame(unitId) {
       const duration = event.duration ? `/${event.duration}T` : "";
       if (event.at) labels.push(`AT${signedValue(event.at)}${duration}`);
       if (event.ag) labels.push(`AG${signedValue(event.ag)}${duration}`);
-      if (event.armor) labels.push(`装甲${signedValue(event.armor)}${event.duration ? `/${event.duration}T` : ""}`);
+      if (event.armor) labels.push(`${TERMS.armor}${signedValue(event.armor)}${event.duration ? `/${event.duration}T` : ""}`);
       return labels;
     });
 }
@@ -2767,22 +3483,22 @@ function actionName(unit) {
 }
 
 function cardCostLabel(unit) {
-  return `${unit.general ? "将" : "兵"}${unit.general ? unit.card.generalCost : unit.card.soldierCost}`;
+  return unit.general ? `${TERMS.alpha}${alphaCardCost(unit.card)}` : `${TERMS.costShort}${normalCardCost(unit.card)}`;
 }
 
 function renderCosts(state) {
   const player = sideCost(state, "player");
   const enemy = sideCost(state, "enemy");
-  els.playerCost.textContent = `Cost ${player.total}/${COST_LIMIT}・${player.cards}枚`;
-  els.enemyCost.textContent = `Cost ${enemy.total}/${COST_LIMIT}・${enemy.cards}枚`;
-  els.costSummary.textContent = `自軍 ${player.total}(${player.cards}枚) / 敵軍 ${enemy.total}(${enemy.cards}枚)`;
-  els.terrainCost.textContent = `自軍地形 ${player.terrain} / 敵軍地形 ${enemy.terrain}`;
+  els.playerCost.textContent = `${TERMS.cost} ${player.total}/${COST_LIMIT}・${player.cards}枚`;
+  els.enemyCost.textContent = `${TERMS.cost} ${enemy.total}/${COST_LIMIT}・${enemy.cards}枚`;
+  els.costSummary.textContent = `${TERMS.playerSide} ${player.total}(${player.cards}枚) / ${TERMS.enemySide} ${enemy.total}(${enemy.cards}枚)`;
+  els.terrainCost.textContent = `${TERMS.playerSide}地形 ${player.terrain} / ${TERMS.enemySide}地形 ${enemy.terrain}`;
 }
 
 function sideCost(state, side) {
   const preset = currentPresetForSide(side);
   const units = createUnits(side, preset, state.terrain[side]);
-  const cardCost = units.reduce((sum, unit) => sum + (unit.general ? unit.card.generalCost : unit.card.soldierCost), 0);
+  const cardCost = units.reduce((sum, unit) => sum + (unit.general ? alphaCardCost(unit.card) : normalCardCost(unit.card)), 0);
   const rawTerrain = terrainGridCost(state.terrain[side]);
   const discount = cards[preset.general].generalKey === "terrainDiscount" ? 2 : 0;
   const terrain = Math.max(0, rawTerrain - discount);
@@ -2791,6 +3507,64 @@ function sideCost(state, side) {
 
 function terrainGridCost(grid) {
   return grid.flat().reduce((sum, terrainId) => sum + terrainTypes[terrainId].cost, 0);
+}
+
+function actionComponents(actionKey) {
+  const components = actions[actionKey]?.components;
+  if (Array.isArray(components) && components.length > 0) return components;
+  return [{ effectElements: ["wait"], targetPattern: "none" }];
+}
+
+function uniqueValues(values) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function actionEffectElementIds(actionKey) {
+  return uniqueValues(actionComponents(actionKey).flatMap((component) => component.effectElements || []));
+}
+
+function actionTargetPatternIds(actionKey) {
+  return uniqueValues(actionComponents(actionKey).map((component) => component.targetPattern));
+}
+
+function actionCategoryIds(actionKey) {
+  return uniqueValues(actionEffectElementIds(actionKey)
+    .map((effectId) => EFFECT_ELEMENTS[effectId]?.category)
+    .filter((category) => category && category !== "none" && category !== "trait"));
+}
+
+function buildCardActionSearchIndex(cardCollection) {
+  return Object.entries(cardCollection).flatMap(([cardId, card]) => ACTION_SLOTS.flatMap((slot) => {
+    const actionId = card[slot.cardKey];
+    const action = actions[actionId];
+    if (!action) return [];
+    return actionComponents(actionId).map((component, componentIndex) => ({
+      cardId,
+      cardName: card.name,
+      slot: slot.id,
+      slotLabel: slot.label,
+      actionId,
+      actionName: action.name,
+      componentIndex,
+      effectElements: [...(component.effectElements || [])],
+      targetPattern: component.targetPattern,
+    }));
+  }));
+}
+
+function findCardActionRecords({ slot = null, effectElement = null, targetPattern = null } = {}) {
+  return CARD_ACTION_SEARCH_INDEX.filter((record) => {
+    if (slot && record.slot !== slot) return false;
+    if (effectElement && !record.effectElements.includes(effectElement)) return false;
+    if (targetPattern && record.targetPattern !== targetPattern) return false;
+    return true;
+  });
+}
+
+function actionSearchSummary(actionKey) {
+  const effectLabels = actionEffectElementIds(actionKey).map((effectId) => EFFECT_ELEMENTS[effectId]?.name || effectId);
+  const targetLabels = actionTargetPatternIds(actionKey).map((targetId) => TARGET_PATTERNS[targetId]?.name || targetId);
+  return `${effectLabels.join(" / ")} -> ${targetLabels.join(" / ")}`;
 }
 
 function renderSelectedCard(state) {
@@ -2804,24 +3578,27 @@ function renderSelectedCard(state) {
     els.cardDetail.innerHTML = "";
     return;
   }
-  els.selectedCardName.textContent = unit.preview ? `${unit.card.name} / 図鑑` : unit.general ? `${unit.card.name} / 大将` : unit.card.name;
+  els.selectedCardName.textContent = unit.preview ? `${unit.card.name} / 図鑑` : unit.general ? `${unit.card.name} / ${TERMS.alpha}` : unit.card.name;
   const stats = unitStats(state, unit);
   els.cardDetail.innerHTML = `
     <div class="detail-grid">
       <div class="detail-cell"><span>HP</span><strong>${unit.hp}/${unit.maxHp}</strong></div>
       <div class="detail-cell"><span>AT</span><strong>${stats.at}</strong></div>
       <div class="detail-cell"><span>AG</span><strong>${stats.ag}</strong></div>
-      <div class="detail-cell"><span>Cost</span><strong>${unit.card.soldierCost}/${unit.card.generalCost}</strong></div>
+      <div class="detail-cell"><span>${TERMS.cost}</span><strong>${cardCostPairShort(unit.card)}</strong></div>
     </div>
-    ${unit.preview ? "" : `<div class="detail-actions"><button type="button" class="secondary" data-general-unit="${unit.id}">${unit.general ? "大将指定中" : "大将に指定"}</button></div>`}
+    <div class="tag-line">${cardBadgeMarkup(unit.card)}</div>
+    ${unit.preview ? "" : `<div class="detail-actions"><button type="button" class="secondary" data-general-unit="${unit.id}">${unit.general ? TERMS.alphaAssigned : TERMS.alphaAssign}</button></div>`}
     <div class="action-list">
-      ${actionVisualMarkup(state, unit, "前", unit.card.front)}
-      ${actionVisualMarkup(state, unit, "中", unit.card.middle)}
-      ${actionVisualMarkup(state, unit, "後", unit.card.rear)}
+      ${actionVisualMarkup(state, unit, TERMS.rankShort[0], unit.card.front)}
+      ${actionVisualMarkup(state, unit, TERMS.rankShort[1], unit.card.middle)}
+      ${actionVisualMarkup(state, unit, TERMS.rankShort[2], unit.card.rear)}
     </div>
+    ${ultimateDetailMarkup(state, unit)}
     <div class="terrain-item"><strong>軽減</strong><span>${defenseDetail(state, unit)}</span></div>
-    <div class="terrain-item"><strong>能力</strong><span>${unit.card.ability}</span></div>
-    <div class="terrain-item"><strong>大将スキル</strong><span>${unit.card.generalSkill}</span></div>
+    <div class="terrain-item"><strong>能力</strong><span>${uiText(unit.card.ability)}</span></div>
+    <div class="terrain-item"><strong>${TERMS.alphaTrait}</strong><span>${uiText(unit.card.generalSkill)}</span></div>
+    <div class="terrain-item"><strong>図鑑</strong><span>${uiText(unit.card.codexText || "")}</span></div>
   `;
 }
 
@@ -2842,6 +3619,7 @@ function previewUnitForCard(cardId) {
     tempAg: 0,
     armorEffects: [],
     statEffects: [],
+    ultimateCharge: 0,
     firstHitReduced: false,
     movedFromRear: false,
     terrain: "平地",
@@ -2855,18 +3633,22 @@ function actionDetail(state, unit, label, actionKey) {
       <strong>${label}</strong>
       <div>
         <b>${action.name}</b>
-        <span>${action.text}</span>
-        <span class="formula-line">${actionFormulaText(state, unit, actionKey)}</span>
+        <span>${uiText(action.text)}</span>
+        <span class="formula-line">${uiText(actionFormulaText(state, unit, actionKey))}</span>
       </div>
     </div>
   `;
 }
 
 function actionFormulaText(state, unit, actionKey) {
+  return uiText(rawActionFormulaText(state, unit, actionKey));
+}
+
+function rawActionFormulaText(state, unit, actionKey) {
   const at = unitStats(state, unit).at;
   if (actionKey === "slash") return `式: AT×1.0 = ${at}ダメージ`;
   if (actionKey === "pierce") {
-    return `式: 1体目 max(4, AT-5) = ${Math.max(4, at - 5)} / 2体目 max(4, AT-10) = ${Math.max(4, at - 10)}ダメージ / 守られた大将は×0.6`;
+    return `式: 1体目 max(4, AT-5) = ${Math.max(4, at - 5)} / 2体目 max(4, AT-10) = ${Math.max(4, at - 10)}ダメージ / 守られたαは×0.6`;
   }
   if (actionKey === "sweep") {
     const rearBonus = unit.card.abilityKey === "rearCannon" ? ` / 後列なら能力で+${REAR_CANNON_BONUS}` : "";
@@ -2887,12 +3669,12 @@ function actionFormulaText(state, unit, actionKey) {
   if (actionKey === "generalWard") {
     return `式: 味方大将に装甲+${generalWardArmorFor(unit)}/${GENERAL_WARD_DURATION}T / max(5, floor(AT×${GENERAL_WARD_HEAL_RATE})) = ${generalWardHealFor(state, unit)}回復`;
   }
-  if (actionKey === "snipe") return `式: max(5, AT-${SNIPE_DAMAGE_OFFSET}) = ${Math.max(5, at - SNIPE_DAMAGE_OFFSET)}ダメージ / 守られた大将は×0.55`;
-  if (actionKey === "raid") return `式: max(5, AT-${RAID_DAMAGE_OFFSET}) = ${Math.max(5, at - RAID_DAMAGE_OFFSET)}ダメージ / 守られた大将は×0.65 / 中列対象なら+${MIDDLE_RAID_BONUS}`;
+  if (actionKey === "snipe") return `式: max(5, AT-${SNIPE_DAMAGE_OFFSET}) = ${Math.max(5, at - SNIPE_DAMAGE_OFFSET)}ダメージ / 守られたαは×0.55`;
+  if (actionKey === "raid") return `式: max(5, AT-${RAID_DAMAGE_OFFSET}) = ${Math.max(5, at - RAID_DAMAGE_OFFSET)}ダメージ / 守られたαは×0.65 / 中衛対象なら+${MIDDLE_RAID_BONUS}`;
   if (actionKey === "command") return `式: 同段味方にAG+${COMMAND_AG} / AT+${commandAtBonusFor(unit)} / ${COMMAND_DURATION}T`;
   if (actionKey === "siege") {
-    const breakerBonus = unit.card.abilityKey === "generalBreaker" ? " / 能力で大将に+4" : "";
-    return `式: AT×1.0 = ${at}ダメージ / 露出大将なら+6${breakerBonus}`;
+    const breakerBonus = unit.card.abilityKey === "generalBreaker" ? " / 能力でαに+4" : "";
+    return `式: AT×1.0 = ${at}ダメージ / 露出αなら+6${breakerBonus}`;
   }
   return "式: 効果なし";
 }
@@ -2905,7 +3687,7 @@ function defenseDetail(state, unit) {
   if (unit.card.abilityKey === "steady") parts.push("各ターン初回被ダメージ-2");
   if (unit.card.abilityKey === "rearWard" && unit.col === 2) parts.push("後列中は遠隔被ダメージ-3");
   if (terrainId === "shrine") parts.push("祭壇で被ダメージ+1");
-  return parts.join(" / ");
+  return uiText(parts.join(" / "));
 }
 
 function renderTerrainPalette() {
@@ -2917,8 +3699,8 @@ function renderTerrainPalette() {
     item.draggable = true;
     item.innerHTML = `
       <strong>${terrainTermMarkup(key)}</strong>
-      <span>Cost ${terrain.cost}</span>
-      <p>${terrain.text}</p>
+      <span>${TERMS.cost} ${terrain.cost}</span>
+      <p>${uiText(terrain.text)}</p>
     `;
     item.addEventListener("click", () => {
       draggedTerrainId = key;
@@ -2942,12 +3724,14 @@ function renderReferences() {
     <article class="reference-item">
       <div class="reference-title">
         <strong>${card.name}</strong>
-        <span>HP ${card.hp} / AT ${card.at} / AG ${card.ag} / Cost 兵${card.soldierCost}・将${card.generalCost}</span>
+        <span>HP ${card.hp} / AT ${card.at} / AG ${card.ag} / ${cardCostPairText(card)}</span>
       </div>
-      <div class="tag-line">${card.tags.map((tag) => `<span>${tagLabel(tag)}</span>`).join("")}</div>
-      <p><b>能力</b>${card.ability}</p>
-      <p><b>大将</b>${card.generalSkill}</p>
-      <p><b>行動</b>前:${actions[card.front].name} / 中:${actions[card.middle].name} / 後:${actions[card.rear].name}</p>
+      <div class="tag-line">${cardBadgeMarkup(card)}</div>
+      <p><b>能力</b>${uiText(card.ability)}</p>
+      <p><b>${TERMS.alphaTrait}</b>${uiText(card.generalSkill)}</p>
+      <p><b>必殺技</b>${uiText(ultimateText(card))}</p>
+      <p><b>行動</b>${TERMS.rankShort[0]}:${actions[card.front].name} / ${TERMS.rankShort[1]}:${actions[card.middle].name} / ${TERMS.rankShort[2]}:${actions[card.rear].name}</p>
+      <p><b>図鑑</b>${uiText(card.codexText || "")}</p>
     </article>
   `).join("");
 
@@ -2957,8 +3741,9 @@ function renderReferences() {
         <strong>${action.name}</strong>
         <span>${actionKindLabel(key)}</span>
       </div>
-      <p>${action.text}</p>
-      <p><b>仕様</b>${actionSpecText(key)}</p>
+      <p>${uiText(action.text)}</p>
+      <p><b>検索</b>${uiText(actionSearchSummary(key))}</p>
+      <p><b>仕様</b>${uiText(actionSpecText(key))}</p>
     </article>
   `).join("");
 
@@ -2966,12 +3751,74 @@ function renderReferences() {
     <article class="reference-item">
       <div class="reference-title">
         <strong>${terrain.name}</strong>
-        <span>Cost ${terrain.cost}</span>
+        <span>${TERMS.cost} ${terrain.cost}</span>
       </div>
-      <p>${terrain.text}</p>
-      <p><b>性質</b>${terrainSpecText(key)}</p>
+      <p>${uiText(terrain.text)}</p>
+      <p><b>性質</b>${uiText(terrainSpecText(key))}</p>
     </article>
   `).join("");
+}
+
+function cardBadgeMarkup(card) {
+  return [
+    rarityMarkup(card.rarity),
+    classificationMarkup(card.classification),
+    ...(card.traits || []).map((traitId) => traitMarkup(traitId)),
+  ].filter(Boolean).join("");
+}
+
+function rarityMarkup(rarityId) {
+  const rarity = RARITIES[rarityId];
+  if (!rarity) return "";
+  return termMarkup(rarity.name, `${rarity.displayName}。最大${rarity.maxCopies}枚、複雑さ:${rarity.complexity}。`);
+}
+
+function classificationMarkup(classificationId) {
+  const classification = CLASSIFICATIONS[classificationId];
+  if (!classification) return "";
+  return termMarkup(classification.name, classification.description);
+}
+
+function traitMarkup(traitId) {
+  const trait = TRAITS[traitId];
+  if (!trait) return termMarkup(traitId, "未定義の特性。");
+  return termMarkup(trait.name, trait.rulesText || trait.shortText);
+}
+
+function traitNames(card) {
+  return (card.traits || []).map((traitId) => TRAITS[traitId]?.name || traitId);
+}
+
+function classificationName(card) {
+  return CLASSIFICATIONS[card.classification]?.name || card.classification || "-";
+}
+
+function ultimateText(card) {
+  if (!card.ultimate) return "なし";
+  return `${card.ultimate.name} / ${card.ultimate.turns}T`;
+}
+
+function ultimateChargeText(unit) {
+  if (!unit.card.ultimate) return "";
+  const charge = Math.min(unit.ultimateCharge || 0, unit.card.ultimate.turns);
+  return charge >= unit.card.ultimate.turns ? "必殺可" : `必殺 ${charge}/${unit.card.ultimate.turns}`;
+}
+
+function ultimateDetailMarkup(state, unit) {
+  if (!unit.card.ultimate) return "";
+  const action = ultimateActions[unit.card.ultimate.key];
+  const text = action?.text || "指定ターン経過後、通常行動の代わりに発動。";
+  return `
+    <div class="terrain-item">
+      <strong>必殺技</strong>
+      <span>${uiText(`${ultimateText(unit.card)}。${ultimateChargeText(unit)}。${text}`)}</span>
+    </div>
+  `;
+}
+
+function ultimatePopoverMarkup(state, unit) {
+  if (!unit.card.ultimate) return "";
+  return `<div class="popover-note"><b>必殺技</b><span>${uiText(`${ultimateText(unit.card)}。${ultimateChargeText(unit)}`)}</span></div>`;
 }
 
 function tagLabel(tag) {
@@ -2997,46 +3844,45 @@ function tagSpecText(tag) {
     scout: "高AGで奇襲や先制行動に向く。",
     assault: "前線突破と大将撃破に向く。",
   };
-  return specs[tag] || tag;
+  return uiText(specs[tag] || tag);
 }
 
 function actionKindLabel(actionKey) {
-  if (["slash", "pierce", "sweep", "snipe", "raid", "siege"].includes(actionKey)) return "攻撃";
-  if (["guard", "generalWard"].includes(actionKey)) return "防御";
-  if (["rally", "command"].includes(actionKey)) return "強化";
-  if (["heal", "lineHeal"].includes(actionKey)) return "回復";
+  const categories = actionCategoryIds(actionKey);
+  if (categories.length > 1) return "複合";
+  if (categories.length === 1) return ROLES[categories[0]]?.name || categories[0];
   return "待機";
 }
 
 function actionSpecText(actionKey) {
   const specs = {
     slash: "最前の敵1体。AT×1.0ダメージ。",
-    pierce: "同段の前から2体。1体目 max(4, AT-5)、2体目 max(4, AT-10)。守られた大将には×0.6。ランス能力で条件達成時+2。",
-    sweep: `敵前列全体。max(4, AT-${SWEEP_DAMAGE_OFFSET})。キャノン能力で後列時+${REAR_CANNON_BONUS}。`,
-    guard: `自分と同段前方の味方に装甲+${GUARD_ARMOR}/1T。ビルダー能力で城壁上なら装甲+${GUARD_ARMOR + RAMPART_GUARD_BONUS}/1T。さらに同段最前の敵へ装甲無視の小ダメージ。`,
+    pierce: "同列の前から2体。1体目 max(4, AT-5)、2体目 max(4, AT-10)。守られたαには×0.6。トライホーン能力で条件達成時+2。",
+    sweep: `敵前衛全体。max(4, AT-${SWEEP_DAMAGE_OFFSET})。ボルカノドレイク能力で後衛時+${REAR_CANNON_BONUS}。`,
+    guard: `自分と同列前方の味方に装甲+${GUARD_ARMOR}/1T。バリアビートル能力で城壁上なら装甲+${GUARD_ARMOR + RAMPART_GUARD_BONUS}/1T。さらに同列最前の敵へ装甲無視の小ダメージ。`,
     rally: "味方前列全体にAT+3/2T。",
-    heal: `HP割合が最も低い味方を max(7, floor(AT×${SINGLE_HEAL_RATE})) 回復し、同段最前の敵へ小ダメージ。ヒーラー能力で対象に装甲+${BLESSING_ARMOR}/1T。`,
-    lineHeal: `同段の傷ついた味方全体を max(6, floor(AT×${LINE_HEAL_RATE})) 回復。プリースト能力で+2。`,
-    generalWard: `味方大将に装甲+${GENERAL_WARD_ARMOR}/1Tと max(5, floor(AT×0.35)) 回復。パラディン能力で装甲+4。`,
-    snipe: `後列優先。max(5, AT-${SNIPE_DAMAGE_OFFSET})。守られた大将には×0.55。アーチャー大将の初回狙撃は+5。`,
-    raid: `中後列の低HPを優先。max(5, AT-${RAID_DAMAGE_OFFSET})。守られた大将には×0.65。ローグ能力で中列対象なら+${MIDDLE_RAID_BONUS}。`,
-    command: "同段の自分以外の味方にAG+8/AT+2/1T。コマンダー能力でAT+3。",
-    siege: "露出大将を優先。AT×1.0、露出大将なら+6。ブレイカー能力で大将対象ならさらに+4。",
+    heal: `HP割合が最も低い味方を max(7, floor(AT×${SINGLE_HEAL_RATE})) 回復し、同列最前の敵へ小ダメージ。ミストミセリウム能力で対象に装甲+${BLESSING_ARMOR}/1T。`,
+    lineHeal: `同列の傷ついた味方全体を max(6, floor(AT×${LINE_HEAL_RATE})) 回復。スポアコロニー能力で+2。`,
+    generalWard: `味方αに装甲+${GENERAL_WARD_ARMOR}/1Tと max(5, floor(AT×0.35)) 回復。オブシディアンタートル能力で装甲+4。`,
+    snipe: `後衛優先。max(5, AT-${SNIPE_DAMAGE_OFFSET})。守られたαには×0.55。スカイレイαの初回狙撃は+5。`,
+    raid: `中後衛の低HPを優先。max(5, AT-${RAID_DAMAGE_OFFSET})。守られたαには×0.65。グラスマンティス能力で中衛対象なら+${MIDDLE_RAID_BONUS}。`,
+    command: "同列の自分以外の味方にAG+8/AT+2/1T。サンダーイール能力でAT+3。",
+    siege: "露出αを優先。AT×1.0、露出αなら+6。ティラノファング能力でα対象ならさらに+4。",
     wait: "行動しない。",
   };
-  return specs[actionKey] || "未定義。";
+  return uiText(specs[actionKey] || "未定義。");
 }
 
 function terrainSpecText(terrainKey) {
   const specs = {
     plain: "バランス調整の基準。初期地形は全プリセット平地。",
-    forest: "遠隔/斥候タグのカードだけAGが上がる。手数や先制順の調整用。",
-    sea: "海適性タグはATと装甲が上がる。重装タグはAGが下がる。",
-    highland: "後列から攻撃した時だけ与ダメージが上がる。",
+    forest: "飛行/擬態寄りのカードだけAGが上がる。手数や先制順の調整用。",
+    sea: "水棲寄りのカードはATと装甲が上がる。大型甲殻寄りのカードはAGが下がる。",
+    highland: "後衛から攻撃した時だけ与ダメージが上がる。",
     shrine: "ターン開始時にHP+3。代償として被ダメージ+1。",
-    rampart: "前列時の被ダメージを下げる。ビルダーの守護も強化される。",
+    rampart: "前衛時の被ダメージを下げる。バリアビートルの守護も強化される。",
   };
-  return specs[terrainKey] || "未定義。";
+  return uiText(specs[terrainKey] || "未定義。");
 }
 
 function renderLog(log, activeIndex = -1) {
@@ -3046,9 +3892,9 @@ function renderLog(log, activeIndex = -1) {
     const index = els.battleLog.children.length;
     if (item.startsWith("TURN")) {
       li.className = "turn-break";
-      li.textContent = item.replace("TURN", "Turn");
+      li.textContent = uiText(item.replace("TURN", "Turn"));
     } else {
-      li.textContent = item;
+      li.textContent = uiText(item);
     }
     if (index === activeIndex) {
       li.className = `${li.className} log-active`.trim();
@@ -3073,7 +3919,7 @@ function getPreset(id) {
 
 function presetCost(preset) {
   const units = createUnits("player", preset, preset.terrain);
-  const card = units.reduce((sum, unit) => sum + (unit.general ? unit.card.generalCost : unit.card.soldierCost), 0);
+  const card = units.reduce((sum, unit) => sum + (unit.general ? alphaCardCost(unit.card) : normalCardCost(unit.card)), 0);
   const rawTerrain = terrainGridCost(preset.terrain);
   const discount = cards[preset.general]?.generalKey === "terrainDiscount" ? 2 : 0;
   const terrain = Math.max(0, rawTerrain - discount);

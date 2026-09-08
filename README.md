@@ -1,6 +1,22 @@
-# 大将戦プロトタイプ
+# α生態戦プロトタイプ
 
 3x3 auto tactics prototype. The playable static build lives in `prototype/`.
+
+## 最新版と検証
+
+[iPhone / PCで試す](https://mcotto033.github.io/game_development/)。2026-09-08公開対象はM1完了時点のプロトタイプです。[試遊レビュー資料](docs/autodev-m1-review.md) と [ロードマップ](docs/ROADMAP.md) に実装範囲・検証結果・残件をまとめています。
+
+個人の利用枠・端末情報・タスクIDを含む自動開発の運用記録はローカルに保持し、この公開リポジトリには含めません。ローカル作業の規約は `AGENTS.md` を参照します。
+
+Node.js 22以上で、次の1コマンドから本体と研究シナリオを検証できます。追加パッケージやビルドは不要です。
+
+```powershell
+.\scripts\verify.ps1
+```
+
+他の環境では `node scripts/verify.js`。UIの見た目やリプレイの時間進行は別途ブラウザで確認します。変更前の復元用コピーは `node scripts/create-checkpoint.js` で `.autodev/checkpoints/` に作成します。
+
+本体の標準総当たりJSONは `node scripts/report-standard-battles.js`。保存方法と指標の定義は [非ゲーム化の観測指標](docs/non-game-metrics-v1.md) を参照します。
 
 ## iPhoneでローカル確認
 
@@ -25,7 +41,7 @@ PCとiPhoneを同じWi-Fiに接続してから、PC側で次を実行します�
 
 ```powershell
 git remote add origin https://github.com/<owner>/<repo>.git
-git add .
+git add prototype .github/workflows/deploy-pages.yml
 git commit -m "Add game prototype and Pages deployment"
 git push -u origin master
 ```

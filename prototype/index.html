@@ -14,29 +14,29 @@
     <main class="app-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">3x3 auto tactics prototype</p>
+          <p class="eyebrow">3x3自動戦術プロトタイプ</p>
           <h1>α生態戦プロトタイプ</h1>
         </div>
         <div class="summary-strip" aria-live="polite">
-          <span id="costSummary">Cost -</span>
+          <span id="costSummary">コスト -</span>
           <span id="winnerSummary">未実行</span>
         </div>
       </header>
 
       <section class="control-band" aria-label="編成">
         <label>
-          自軍
+          自分
           <select id="playerPreset"></select>
         </label>
         <label>
-          敵軍
+          相手
           <select id="enemyPreset"></select>
         </label>
         <label>
           地形編集
           <select id="editSide">
-            <option value="player">自軍</option>
-            <option value="enemy">敵軍</option>
+            <option value="player">自分</option>
+            <option value="enemy">相手</option>
           </select>
         </label>
         <label>
@@ -57,7 +57,7 @@
         </label>
         <div class="button-row">
           <button id="runBattle" type="button">100戦対戦</button>
-          <button id="runRoundRobin" type="button" class="secondary">モデル総当たり</button>
+          <button id="runRoundRobin" type="button" class="secondary">標準総当たり</button>
           <button id="playReplay" type="button" class="secondary" disabled>リプレイ再生</button>
           <button id="resetBattle" type="button" class="secondary">初期化</button>
         </div>
@@ -93,15 +93,15 @@
         <section class="battle-layout">
           <section class="army-panel enemy-side" aria-labelledby="enemyTitle">
             <div class="panel-heading">
-              <h2 id="enemyTitle">敵軍</h2>
+              <h2 id="enemyTitle">相手</h2>
               <span id="enemyCost" class="cost-pill">-</span>
             </div>
-            <div id="enemyBoard" class="board enemy-board" aria-label="敵軍盤面"></div>
+            <div id="enemyBoard" class="board enemy-board" aria-label="相手盤面"></div>
           </section>
 
           <section class="center-panel" aria-label="戦況">
             <div class="status-box">
-              <p class="eyebrow">Victory</p>
+              <p class="eyebrow">勝利条件</p>
               <strong>α撃破</strong>
               <span id="turnCount" class="cost-pill">0T</span>
             </div>
@@ -110,10 +110,10 @@
 
           <section class="army-panel player-side" aria-labelledby="playerTitle">
             <div class="panel-heading">
-              <h2 id="playerTitle">自軍</h2>
+              <h2 id="playerTitle">自分</h2>
               <span id="playerCost" class="cost-pill">-</span>
             </div>
-            <div id="playerBoard" class="board player-board" aria-label="自軍盤面"></div>
+            <div id="playerBoard" class="board player-board" aria-label="自分盤面"></div>
           </section>
         </section>
 
@@ -133,6 +133,14 @@
             </div>
             <div id="matchupSummary" class="matchup-summary"></div>
             <div id="roundRobinTable" class="round-robin"></div>
+          </section>
+
+          <section class="data-panel generation-panel" aria-labelledby="generationTitle">
+            <div class="panel-heading">
+              <h2 id="generationTitle">生成候補</h2>
+              <span class="cost-pill">v0</span>
+            </div>
+            <div id="generationSummary" class="generation-summary"></div>
           </section>
 
           <section class="data-panel log-panel" aria-labelledby="logTitle">

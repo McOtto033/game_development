@@ -29,10 +29,17 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload prototype
+      - name: Stage playable builds
+        run: |
+          mkdir -p "$RUNNER_TEMP/pages"
+          cp -R prototype/. "$RUNNER_TEMP/pages/"
+          cp -R prototype prototype-comparison "$RUNNER_TEMP/pages/"
+          touch "$RUNNER_TEMP/pages/.nojekyll"
+
+      - name: Upload playable builds
         uses: actions/upload-pages-artifact@v4
         with:
-          path: prototype
+          path: ${{ runner.temp }}/pages
 
       - name: Deploy to GitHub Pages
         id: deployment

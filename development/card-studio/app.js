@@ -1,6 +1,7 @@
 'use strict';
 const M=window.StudioModel;
 const T=window.StudioTargeting;
+const deckLimitHelp='n枚制限は、1〜n枚制限のカードをデッキ全体で合計n枚まで。2枚制限なら1枚制限＋2枚制限を合計2枚まで、うち1枚制限は1枚まで。同名かどうかは問わず、制限なしは数えません。';
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const stateNames={draft:'下書き',testing:'検証中',adopted:'採用',held:'保留',archived:'見送り'};
@@ -42,9 +43,9 @@ function restrictionGrid(c,interactive=false){
 }
 function restrictionsForm(c){
   const limits=[...new Set([1,2,3,4,5,6,7,8,9,...(c.deckLimit?[c.deckLimit]:[])])];
-  return `<section class="panel construction-restrictions"><h3>構築時の制限</h3><p class="muted">強さに対するペナルティ・調整として設定します。</p><h4>初期配置制限</h4><p class="muted">×のマスにはデッキ構築時に置けません。</p>${restrictionGrid(c,true)}<div class="preset-buttons">${['前衛','中衛','後衛'].map((label,col)=>`<button class="quiet" data-action="restriction-rank" data-rank="${col}">${label}不可</button>`).join('')}<button class="quiet" data-action="clear-restrictions">制限なし</button></div><p class="restriction-summary">${esc(M.placementText(c))}</p>${field('枚数制限','card.deckLimit',String(c.deckLimit??''),{select:[['','制限なし'],...limits.map(n=>[String(n),n+'枚制限'])],hint:'同名カードの上限ではなく、デッキ内の該当する制限カードを合算する区分。制限なしはこの合算に含めません。'})}</section>`;
+  return `<section class="panel construction-restrictions"><h3>構築時の制限</h3><p class="muted">強さに対するペナルティ・調整として設定します。</p><h4>初期配置制限</h4><p class="muted">×のマスにはデッキ構築時に置けません。</p>${restrictionGrid(c,true)}<div class="preset-buttons">${['前衛','中衛','後衛'].map((label,col)=>`<button class="quiet" data-action="restriction-rank" data-rank="${col}">${label}不可</button>`).join('')}<button class="quiet" data-action="clear-restrictions">制限なし</button></div><p class="restriction-summary">${esc(M.placementText(c))}</p>${field('枚数制限','card.deckLimit',String(c.deckLimit??''),{select:[['','制限なし'],...limits.map(n=>[String(n),n+'枚制限'])],hint:deckLimitHelp})}</section>`;
 }
-function restrictionsPreview(c){return `<div class="preview-restrictions"><div><small>初期配置</small>${tip('初期配置制限','デッキ構築時に置くことができないマス。戦闘中の移動制限とは別です。 '+M.placementText(c),M.placementText(c))}${c.initialPlacementForbidden?.length?restrictionGrid(c):''}</div><div><small>枚数制限</small>${tip('枚数制限','同名カード単位ではなく、該当する制限カードをデッキ全体で合算します。制限なしのカードはこの制限に数えません。',c.deckLimit?c.deckLimit+'枚制限':'制限なし')}</div></div>`;}
+function restrictionsPreview(c){return `<div class="preview-restrictions"><div><small>初期配置</small>${tip('初期配置制限','デッキ構築時に置くことができないマス。戦闘中の移動制限とは別です。 '+M.placementText(c),M.placementText(c))}${c.initialPlacementForbidden?.length?restrictionGrid(c):''}</div><div><small>枚数制限</small>${tip('枚数制限',deckLimitHelp,c.deckLimit?c.deckLimit+'枚制限':'制限なし')}</div></div>`;}
 function traitForm(t,i) {
   const p=`card.traits.${i}`,choices=[['',t.name?`既存の個別特性：${t.name}`:'特性を選択'],...M.traitDefinitions(library).map(def=>[def.id,def.name])];
   return `<div class="trait-editor"><div class="form-grid">${field('共通特性',p+'.definitionId',t.definitionId||'',{select:choices})}${field('数値（任意）',p+'.value',t.value,{placeholder:'5'})}</div>${field('効果量（任意）',p+'.effectAmount',t.effectAmount||'',{placeholder:'AT×1.0',hint:'数値欄とは別に、反撃の攻撃倍率などを指定'})}${t.definitionId?`<div class="field"><span>共通の説明</span><p class="muted prewrap">${esc(t.description)}</p></div>`:`${field('既存の特性名',p+'.name',t.name)}${field('タップ時の説明',p+'.description',t.description,{area:true})}`}<button class="quiet danger" data-action="remove-trait" data-index="${i}">この特性を外す</button></div>`;

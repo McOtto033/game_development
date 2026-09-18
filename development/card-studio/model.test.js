@@ -4,6 +4,24 @@ const assert=require('node:assert/strict');
 const M=require('./model');
 const library=()=>({schemaVersion:1,revision:0,cards:[M.template('attack')],definitions:[]});
 
+test('旧特性を保持し、共通特性と独立した数値・効果量を保存・取り込みできる',()=>{
+  const old=library();old.cards[0].card.traits=[{name:'旧特性',value:'5',description:'既存の説明'}];M.validateLibrary(old);
+  const next=M.clone(old);next.traitDefinitions=[{id:'custom_trait',name:'独自の共通特性',description:'共通説明'}];
+  next.cards[0].card.traits.push({definitionId:'ambush',name:'待ち伏せ',value:'2',effectAmount:'AT×1.25',description:'常時反撃状態'});
+  next.cards[0].card.traits.push({definitionId:'custom_trait',name:'独自の共通特性',value:'',effectAmount:'AT×0.5',description:'共通説明'});
+  M.validateLibrary(next);const merged=M.mergeLibraries({schemaVersion:1,revision:0,cards:[],definitions:[]},next);
+  assert.deepEqual(merged.library.cards[0].card.traits,next.cards[0].card.traits);assert.deepEqual(merged.library.traitDefinitions,next.traitDefinitions);
+  next.traitDefinitions.push({id:'another_id',name:'待ち伏せ',description:''});assert.throws(()=>M.validateLibrary(next),/重複/);
+});
+test('行動枠に合う自身位置へ相対対象を投影し、旧データと範囲外の指定を保持する',()=>{
+  const t=M.effect().target;t.basis='relative';t.ally=[4];const original=M.clone(t);
+  for(const [slot,cell] of [['front',3],['middle',4],['rear',5]]){assert.equal(M.originCell(slot),cell);assert.deepEqual(M.targetCells(t,'ally',slot),[cell]);}
+  assert.deepEqual(t,original);
+  t.ally=[3,4,5];assert.deepEqual(M.targetCells(t,'ally','front'),[3,4]);assert.deepEqual(t.ally,[3,4,5]);
+  M.toggleTargetCell(t,'ally','front',5);assert.deepEqual(M.targetCells(t,'ally','front'),[3,4,5]);assert.ok(t.allyOffsets.some(p=>p[1]===-1));
+  const absolute=M.effect().target;absolute.ally=[0,4,8];M.changeTargetBasis(absolute,'front','relative');assert.deepEqual(M.targetCells(absolute,'ally','front'),[0,4,8]);M.changeTargetBasis(absolute,'front','absolute');assert.deepEqual(absolute.ally,[0,4,8]);
+});
+
 test('テンプレートは五つの行動枠を持ち、未入力の下書きでも保存できる',()=>{
   for(const kind of ['blank','attack','support']) {
     const lib=library();lib.cards=[M.template(kind)];M.validateLibrary(lib);

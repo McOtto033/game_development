@@ -23,6 +23,20 @@ const requests=[];
     const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
     await page.goto(url);await page.getByText('✓ この端末のDBに接続',{exact:true}).waitFor();
     await page.locator('[data-template="attack"]').tap();await page.getByLabel('カード名',{exact:true}).fill('iPhoneの新カード');
+    await page.locator('[data-action="add-trait"]').tap();await page.locator('[data-bind="card.traits.0.definitionId"]').selectOption('ambush');
+    await page.locator('[data-bind="card.traits.0.value"]').fill('5');await page.locator('[data-bind="card.traits.0.effectAmount"]').fill('AT×1.25');
+    assert.match(await page.locator('.preview-traits').textContent(),/待ち伏せ5 \/ AT×1.25/);
+    await page.getByRole('button',{name:'待ち伏せの説明',exact:true}).tap();assert.match(await page.locator('#dialog-body').textContent(),/常時反撃状態/);await page.keyboard.press('Escape');
+    await page.locator('[data-action="new-trait-definition"]').tap();await page.locator('[name="traitName"]').fill('共通特性の検証');await page.locator('#trait-definition-form [name="description"]').fill('再利用する説明');await page.locator('#trait-definition-form button[type="submit"]').tap();
+    await page.locator('[data-action="add-trait"]').tap();await page.locator('[data-bind="card.traits.1.definitionId"]').selectOption({label:'共通特性の検証'});
+    await page.locator('[data-tab="effects"]').tap();
+    for(const [slot,cell] of [['front',3],['middle',4],['rear',5]]) {
+      await page.locator(`[data-slot="${slot}"]`).tap();
+      if(slot!=='front'){await page.locator(`[data-bind="card.skills.${slot}.enabled"]`).check();await page.locator('[data-action="add-effect"]').tap();}
+      assert.equal(await page.locator('[data-effect-index="0"] .origin').getAttribute('data-cell'),String(cell));
+      await page.locator('[data-action="target-preset"][data-index="0"][data-preset="self"]').tap();
+      assert.equal(await page.locator(`[data-effect-index="0"] [data-side="ally"][data-cell="${cell}"]`).getAttribute('aria-pressed'),'true');
+    }
     await page.locator('[data-tab="notes"]').tap();await page.locator('[data-bind="notes.intent"]').fill('端末にだけ残す設計意図');
     await page.locator('#save').tap();await page.locator('#save-state').filter({hasText:'保存済み'}).waitFor();
     await page.reload();await page.getByLabel('カード名',{exact:true}).waitFor();assert.equal(await page.getByLabel('カード名',{exact:true}).inputValue(),'iPhoneの新カード');
@@ -31,6 +45,7 @@ const requests=[];
     await second.getByLabel('AT',{exact:true}).fill('90');await second.locator('#save').click();await second.locator('#notice').filter({hasText:'別の画面'}).waitFor();
     assert.equal(await second.getByLabel('AT',{exact:true}).inputValue(),'90');
     const db=await page.evaluate(async()=>{const s=await StudioStorage.connect();return s.initialLibrary;});assert.equal(db.cards[0].card.at,35);assert.equal(db.cards[0].notes.intent,'端末にだけ残す設計意図');
+    assert.equal(db.cards[0].card.traits[0].effectAmount,'AT×1.25');assert.equal(db.cards[0].card.traits[0].value,'5');assert.equal(db.traitDefinitions[0].name,'共通特性の検証');
     const backupEvent=page.waitForEvent('download');await page.locator('[data-action="export-backup"]').tap();
     const backup=JSON.parse(await fs.readFile(await(await backupEvent).path(),'utf8'));assert.equal(backup.cards[0].card.at,30);
     const exportEvent=page.waitForEvent('download');await page.locator('#export-library').tap();const exported=await(await exportEvent).path();

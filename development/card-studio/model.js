@@ -19,6 +19,31 @@
   const clone = x => JSON.parse(JSON.stringify(x));
   const id = prefix => prefix + '-' + (globalThis.crypto?.randomUUID?.() || Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
   const definitions = library => [...builtins,...library.definitions];
+  const builtinTraits=[
+    {id:'armored',name:'装甲',description:'常時ダメージカット状態。軽減量は数値欄で指定する。'},
+    {id:'ambush',name:'待ち伏せ',description:'常時反撃状態。反撃の攻撃倍率は効果量欄で指定する。'}
+  ];
+  const traitDefinitions=library=>[...builtinTraits,...(library.traitDefinitions||[])];
+  const originCell=slot=>({front:3,middle:4,rear:5}[slot]??4);
+  const allyOffsets=t=>t.allyOffsets??t.ally.map(cell=>[Math.floor(cell/3)-1,cell%3-1]);
+  function targetCells(t,side,slot) {
+    if(side!=='ally'||t.basis!=='relative')return t[side];
+    const origin=originCell(slot);
+    return allyOffsets(t).map(([r,c])=>[r+1,c+origin%3]).filter(([r,c])=>r>=0&&r<3&&c>=0&&c<3).map(([r,c])=>r*3+c);
+  }
+  function toggleTargetCell(t,side,slot,cell) {
+    if(side==='ally'&&t.basis==='relative') {
+      const offset=[Math.floor(cell/3)-1,cell%3-originCell(slot)%3],items=allyOffsets(t);
+      t.allyOffsets=items.some(x=>x[0]===offset[0]&&x[1]===offset[1])?items.filter(x=>x[0]!==offset[0]||x[1]!==offset[1]):[...items,offset];
+    } else t[side]=t[side].includes(cell)?t[side].filter(x=>x!==cell):[...t[side],cell].sort((a,b)=>a-b);
+  }
+  function changeTargetBasis(t,slot,basis) {
+    if(t.basis===basis)return;
+    const cells=targetCells(t,'ally',slot);
+    if(basis==='relative')t.allyOffsets=cells.map(cell=>[Math.floor(cell/3)-1,cell%3-originCell(slot)%3]);
+    else {t.ally=cells;delete t.allyOffsets;}
+    t.basis=basis;
+  }
   function effect(typeId='attack') {
     return {id:id('fx'),typeId,target:{basis:'absolute',ally:[],enemy:[0,1,2,3,4,5,6,7,8],selection:'search',count:1,rule:'残HPが最も低い対象',tie:'前衛→中衛→後衛、同じ衛では左→中央→右',fallback:''},amount:{mode:'multiplier',reference:'AT',value:1,expression:''},duration:{mode:'instant',turns:2},condition:'',alternate:{condition:'',amount:''},details:'',params:{}};
   }
@@ -70,6 +95,10 @@
     check(object(lib)&&lib.schemaVersion===1&&integer(lib.revision),'Card Studio v1のライブラリJSONを指定してください。');
     check(Array.isArray(lib.cards)&&lib.cards.length<=1000&&Array.isArray(lib.definitions)&&lib.definitions.length<=1000,'カード・効果定義は各1000件までです。');
     check(unique(lib.cards.map(x=>x?.id))&&unique([...builtins,...lib.definitions].map(x=>x?.id)),'カードIDまたは効果定義IDが重複しています。');
+    check(lib.traitDefinitions===undefined||(Array.isArray(lib.traitDefinitions)&&lib.traitDefinitions.length<=1000),'共通特性は1000件までの配列にしてください。');
+    const traits=traitDefinitions(lib);
+    check(unique(traits.map(x=>x?.id))&&unique(traits.map(x=>x?.name)),'共通特性のIDまたは名前が重複しています。');
+    for(const t of traits)check(object(t)&&str(t.id)&&/^[a-z][a-z0-9_-]{0,79}$/.test(t.id)&&str(t.name)&&t.name.trim()&&str(t.description),'共通特性のID・名前・説明が不正です。');
     for(const def of lib.definitions) {
       check(object(def)&&/^[a-z][a-z0-9_-]{0,63}$/.test(def.id)&&str(def.name)&&def.name.trim()&&str(def.icon)&&str(def.description),'効果定義のID・名前・アイコン・説明を確認してください。');
       check(Array.isArray(def.parameters)&&def.parameters.length<=20&&unique(def.parameters.map(p=>p?.key)),'追加パラメーターは重複なし・20項目までです。');
@@ -82,7 +111,10 @@
       check(!c.artwork||/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(c.artwork),'イラストはPNG/JPEG/WebPの埋め込み画像を指定してください。');
       check(['cost','alphaCost','hp','at','ag'].every(k=>integer(c[k])),'コスト・HP・AT・AGは0以上の整数で入力してください。');
       check(Array.isArray(c.terrains)&&c.terrains.every(str)&&Array.isArray(c.traits),'得意地形・特性の形式が不正です。');
-      for(const t of c.traits)check(object(t)&&str(t.name)&&str(t.value)&&str(t.description),'特性は名前・数値・説明を持つ形式にしてください。');
+      for(const t of c.traits){
+        check(object(t)&&str(t.name)&&str(t.value)&&str(t.description)&&(t.effectAmount===undefined||str(t.effectAmount)),'特性は名前・数値・効果量・説明を持つ形式にしてください。');
+        check(t.definitionId===undefined||t.definitionId===''||traits.some(def=>def.id===t.definitionId),'未登録の共通特性が参照されています。');
+      }
       check(object(c.skills),'行動枠がありません。');
       for(const [key,label] of slots) {
         const s=c.skills[key];check(object(s)&&typeof s.enabled==='boolean'&&['name','trigger','condition'].every(k=>str(s[k]))&&integer(s.turns)&&s.turns>0&&Array.isArray(s.effects)&&s.effects.length<=2,`${label}は最大2効果の規定形式にしてください。`);
@@ -91,6 +123,7 @@
           const t=e.target,a=e.amount,u=e.duration;
           check(object(t)&&['absolute','relative'].includes(t.basis)&&['all','search'].includes(t.selection)&&integer(t.count)&&t.count>0&&['rule','tie','fallback'].every(k=>str(t[k])),`${label}の対象条件を確認してください。`);
           for(const side of ['ally','enemy'])check(Array.isArray(t[side])&&t[side].every(v=>integer(v)&&v<9)&&unique(t[side]),'対象マスは0〜8の重複しない番号で指定してください。');
+          check(t.allyOffsets===undefined||(Array.isArray(t.allyOffsets)&&t.allyOffsets.length<=25&&t.allyOffsets.every(p=>Array.isArray(p)&&p.length===2&&p.every(n=>Number.isInteger(n)&&Math.abs(n)<=2))&&unique(t.allyOffsets.map(p=>p.join(',')))),'相対対象の座標が不正です。');
           check(object(a)&&['none','fixed','multiplier','percent','expression'].includes(a.mode)&&num(a.value)&&str(a.reference)&&str(a.expression),'効果量の形式が不正です。');
           check(object(u)&&['instant','turns','always'].includes(u.mode)&&integer(u.turns)&&u.turns>0,'持続期間の形式が不正です。');
           check(object(e.alternate)&&str(e.alternate.condition)&&str(e.alternate.amount)&&object(e.params),'条件別の効果量・追加パラメーターの形式が不正です。');
@@ -114,7 +147,7 @@
       if(!s.name.trim())out.push(`${label}の固有名を記入する`);
       if(!s.effects.length)out.push(`${label}の効果を追加する`);
       for(const e of s.effects) {
-        if(!e.target.ally.length&&!e.target.enemy.length)out.push(`${label}の対象マスを選ぶ`);
+        if(!targetCells(e.target,'ally',key).length&&!e.target.enemy.length)out.push(`${label}の対象マスを選ぶ`);
         if(e.target.selection==='search'&&!e.target.rule.trim())out.push(`${label}のサーチ条件を記入する`);
         if(e.alternate.condition&&!e.alternate.amount)out.push(`${label}の条件成立時の効果量を記入する`);
         if(e.amount.mode==='expression'&&!e.amount.expression)out.push(`${label}の効果量を記入する`);
@@ -142,6 +175,11 @@
   }
   function mergeLibraries(current,incoming) {
     validateLibrary(incoming);const merged=clone(current);let copied=0;let added=0;
+    for(const def of incoming.traitDefinitions||[]) {
+      const prior=traitDefinitions(merged).find(x=>x.id===def.id||x.name===def.name);
+      if(prior&&JSON.stringify(prior)!==JSON.stringify(def))throw Error(`共通特性「${def.name}」の定義が異なります。取込元のID・名前を整理してください。`);
+      if(!prior){merged.traitDefinitions||=[];merged.traitDefinitions.push(clone(def));}
+    }
     for(const def of incoming.definitions) {
       const prior=definitions(merged).find(x=>x.id===def.id);
       if(prior&&JSON.stringify(prior)!==JSON.stringify(def))throw Error(`効果ID「${def.id}」の定義が異なります。取込元のIDを変更してください。`);
@@ -157,5 +195,5 @@
     validateLibrary(merged);return {library:merged,added,copied};
   }
   function exportCard(d) {return {schemaVersion:1,format:'card-design-spec',designId:d.id,gameCardId:d.gameCardId,card:clone(d.card)};}
-  return {slots,classes,classIcons,terrains,builtins,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard};
+  return {slots,classes,classIcons,terrains,builtins,builtinTraits,traitDefinitions,originCell,targetCells,toggleTargetCell,changeTargetBasis,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard};
 });

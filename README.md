@@ -4,6 +4,8 @@
 
 ## 最新版と検証
 
+[カード設計室をiPhone / PCで開く](https://mcotto033.github.io/game_development/card-studio/)。新カードの定型入力、効果種類の追加、設計メモ・調整履歴の保存に対応しています。公開版は端末ごとのブラウザ内に保存し、PCとの受け渡しにはJSONの書き出し・取り込みを使います。[使い方](development/card-studio/README.md)。
+
 [iPhone / PCで試す](https://mcotto033.github.io/game_development/)。2026-09-08公開対象はM1完了時点のプロトタイプです。[試遊レビュー資料](docs/autodev-m1-review.md) と [ロードマップ](docs/ROADMAP.md) に実装範囲・検証結果・残件をまとめています。
 
 比較版C1は `prototype-comparison/index.html` から起動できます。A旧表示/Bビジュアル表示、形別の数値ポップ、編成編集を備え、現行版とは保存先を分離しています。[比較試遊資料](docs/ui-comparison-c1.md) を参照してください。次回のPagesデプロイ後は [比較版をスマホで試す](https://mcotto033.github.io/game_development/prototype-comparison/) から開けます。

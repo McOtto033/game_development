@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>カード設計室 | Card Studio</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="styles.css">
+  <script defer src="model.js"></script><script defer src="storage.js"></script><script defer src="app.js"></script>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="brand-mark">✦</span><div><b>CARD STUDIO</b><small>カード設計室</small></div><span class="dev-badge">開発用</span></div><div class="top-actions"><span id="save-state" role="status">接続中…</span><button id="export-library" class="quiet">DB書き出し</button><button id="import-library" class="quiet">取り込み</button><button id="save" class="primary" disabled>保存 <kbd>Ctrl S</kbd></button></div></header>
+  <div id="notice" class="notice" role="status" hidden></div>
+  <div class="workspace">
+    <aside class="library"><div class="section-label">LIBRARY <span id="library-count">0</span></div><button id="new-card" class="primary wide">＋ 新しいカード</button><label class="search"><span class="sr-only">カードを検索</span><input id="search" type="search" placeholder="名前・効果・メモを検索"></label><label class="sr-only" for="status-filter">設計状態で絞り込み</label><select id="status-filter"><option value="">すべての状態</option><option value="draft">下書き</option><option value="testing">検証中</option><option value="adopted">採用</option><option value="held">保留</option><option value="archived">見送り</option></select><div id="card-list"></div><div class="library-footer"><span class="local-dot"></span> このPCの開発用DB<br><small>保存時に変更履歴とバックアップを作成</small><button id="catalog" class="quiet wide">◇ 効果の定義を管理</button></div></aside>
+    <main id="main"><section class="welcome"><span class="eyebrow">FROM IDEA TO CARD</span><h1>次の一枚を、ここから。</h1><p>基本情報を埋め、対象マスと効果を組み合わせる。<br>設計の意図と調整の学びも、一枚ずつ残せます。</p><div class="starter-grid"><button data-template="blank"><span>＋</span><b>白紙から</b><small>16項目の入力枠を用意</small></button><button data-template="attack"><span>⚔</span><b>攻撃型から</b><small>サーチ攻撃をたたき台に</small></button><button data-template="support"><span>✚</span><b>支援型から</b><small>味方前衛の回復をたたき台に</small></button></div><p class="muted">テンプレートの名称・数値は入力例です。自由に変更できます。</p></section></main>
+    <aside id="preview" class="preview"><div class="section-label">LIVE PREVIEW</div><div class="preview-empty">✧<p>カードを作ると<br>ここに表示されます</p></div></aside>
+  </div>
+  <dialog id="dialog"><div id="dialog-body"></div></dialog>
+  <input type="file" id="json-file" accept=".json,application/json" hidden><input type="file" id="art-file" accept="image/png,image/jpeg,image/webp" hidden>
+</body>
+</html>

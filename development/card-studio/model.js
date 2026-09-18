@@ -7,6 +7,8 @@
   const slots = [['front','前衛'],['middle','中衛'],['rear','後衛'],['ultimate','必殺技'],['alpha','αスキル']];
   const effectLimit = slot => slot==='ultimate'?3:2;
   const stats = [['AT','AT'],['AG','AG'],['HP','HP（現在値）'],['maxHP','最大HP'],['armor','装甲'],['custom','その他（自由入力）']];
+  const statuses = [['poison','毒'],['healBlock','回復封じ'],['defenseDown','防御低下'],['contactPoison','接触毒'],['reflectShell','反射殻'],['armor','装甲（ダメージカット）'],['counter','反撃'],['regen','継続回復'],['paralysis','麻痺'],['barrier','バリア'],['custom','その他（自由入力）']];
+  const statusText = e => e.statusId==='custom'?(e.customStatus||'状態名未入力'):statuses.find(([key])=>key===e.statusId)?.[1]||'';
   const targetSources = [['grid','マスで指定'],['attackSource','自身を攻撃してきた相手'],['attackTarget','自身が攻撃した相手'],['effectSource','発動契機となった効果の発生元'],['previousEffectTarget','この行動の直前の効果の対象'],['custom','その他（自由入力）']];
   const targetSource = t => t.source??'grid';
   const statText = e => e.stat==='custom'?(e.customStat||'項目未入力'):stats.find(([key])=>key===e.stat)?.[1]||'';
@@ -81,7 +83,7 @@
   }
   function effectText(e,defs=builtins) {
     const def=defs.find(x=>x.id===e.typeId);const amount=amountText(e.amount);
-    const stat=['buff','debuff'].includes(e.typeId)?statText(e):'';
+    const stat=['buff','debuff'].includes(e.typeId)?statText(e):e.typeId==='status'?statusText(e):'';
     return `${def?.name||e.typeId}${stat?'（'+stat+'）':''}${amount?'：'+amount:''}${e.alternate.condition?'（'+e.alternate.condition+'：'+e.alternate.amount+'）':''}${e.typeId==='attack'&&(e.repeatCount??1)>1?' / '+e.repeatCount+'回':''}${e.duration.mode==='always'?' / 常時':e.duration.mode==='turns'?' / '+e.duration.turns+'T':''}`;
   }
   function noUnsafeKeys(value,depth=0) {
@@ -130,6 +132,8 @@
           const t=e.target,a=e.amount,u=e.duration;
           check(e.stat===undefined||e.stat===''||stats.some(([key])=>key===e.stat),'強化・弱体する項目が不正です。');
           check(e.customStat===undefined||str(e.customStat),'強化・弱体する独自項目は文字で入力してください。');
+          check(e.statusId===undefined||e.statusId===''||statuses.some(([key])=>key===e.statusId),'付与する状態が不正です。');
+          check(e.customStatus===undefined||str(e.customStatus),'独自の状態名は文字で入力してください。');
           check(e.repeatCount===undefined||(integer(e.repeatCount)&&e.repeatCount>0),'攻撃回数は1以上の整数で入力してください。');
           check(object(t)&&['absolute','relative'].includes(t.basis)&&['all','search'].includes(t.selection)&&integer(t.count)&&t.count>0&&['rule','tie','fallback'].every(k=>str(t[k])),`${label}の対象条件を確認してください。`);
           check(targetSources.some(([key])=>key===targetSource(t))&&(t.context===undefined||str(t.context)),'行動・効果からの対象指定が不正です。');
@@ -164,6 +168,7 @@
         } else if(targetSource(e.target)==='custom'&&!e.target.context?.trim())out.push(`${label}の対象の決め方を記入する`);
         if(targetSource(e.target)==='previousEffectTarget'&&s.effects.indexOf(e)===0)out.push(`${label}の先頭の効果には、直前の効果がないため対象を変更する`);
         if(['buff','debuff'].includes(e.typeId)&&(!e.stat||(e.stat==='custom'&&!e.customStat?.trim())))out.push(`${label}の強化・弱体する項目を指定する`);
+        if(e.typeId==='status'&&(!e.statusId||(e.statusId==='custom'&&!e.customStatus?.trim())))out.push(`${label}の付与する状態を指定する`);
         if(e.alternate.condition&&!e.alternate.amount)out.push(`${label}の条件成立時の効果量を記入する`);
         if(e.amount.mode==='expression'&&!e.amount.expression)out.push(`${label}の効果量を記入する`);
       }
@@ -210,5 +215,5 @@
     validateLibrary(merged);return {library:merged,added,copied};
   }
   function exportCard(d) {return {schemaVersion:1,format:'card-design-spec',designId:d.id,gameCardId:d.gameCardId,card:clone(d.card)};}
-  return {slots,effectLimit,stats,statText,targetSources,targetSource,targetText,classes,classIcons,terrains,builtins,builtinTraits,traitDefinitions,originCell,targetCells,toggleTargetCell,changeTargetBasis,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard};
+  return {slots,effectLimit,stats,statText,statuses,statusText,targetSources,targetSource,targetText,classes,classIcons,terrains,builtins,builtinTraits,traitDefinitions,originCell,targetCells,toggleTargetCell,changeTargetBasis,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard};
 });

@@ -102,6 +102,23 @@ test('同じ倍率の連続攻撃を1効果として扱い、回数は正の整�
   e.typeId='heal';assert.ok(!M.effectText(e).includes('3回'));e.typeId='attack';
   for(const invalid of [0,-1,1.5,'3',null]){e.repeatCount=invalid;assert.throws(()=>M.validateLibrary(lib),/攻撃回数/);}
 });
+test('状態付与は選択した状態・量・期間を表示し、旧データと自由入力を保持する',()=>{
+  const lib=library(),d=lib.cards[0],e=d.card.skills.front.effects[0];
+  e.typeId='status';e.details='以前に記入した毒の説明';const old=M.clone(lib);
+  M.validateLibrary(lib);assert.deepEqual(lib,old);assert.ok(M.warnings(d).some(s=>s.includes('付与する状態')));
+  e.amount.mode='none';e.duration.mode='turns';e.duration.turns=3;
+  for(const [id,name] of M.statuses.filter(([id])=>id!=='custom')) {
+    e.statusId=id;M.validateLibrary(lib);assert.equal(M.effectText(e),`状態付与（${name}） / 3T`);
+  }
+  e.statusId='counter';e.amount.mode='multiplier';e.amount.value=.5;assert.equal(M.effectText(e),'状態付与（反撃）：AT×0.5 / 3T');
+  e.statusId='custom';e.customStatus='独自の状態';assert.equal(M.statusText(e),'独自の状態');
+  const saved=M.prepareSave(lib,old),merged=M.mergeLibraries({schemaVersion:1,revision:0,cards:[],definitions:[]},JSON.parse(JSON.stringify(saved)));
+  assert.deepEqual(M.exportCard(merged.library.cards[0]).card,d.card);assert.equal(e.details,'以前に記入した毒の説明');
+  e.customStatus=' ';assert.ok(M.warnings(d).some(s=>s.includes('付与する状態')));
+  e.customStatus=5;assert.throws(()=>M.validateLibrary(lib),/状態名/);e.customStatus='';
+  e.statusId='unknown';assert.throws(()=>M.validateLibrary(lib),/付与する状態/);
+  e.statusId='poison';e.typeId='heal';assert.ok(!M.effectText(e).includes('毒'));
+});
 test('追加項目なしの旧データを変更せず読み込み、新項目をJSON受け渡しと仕様出力で保持する',()=>{
   const old=library(),e=old.cards[0].card.skills.front.effects[0];
   delete e.stat;delete e.customStat;delete e.repeatCount;delete e.target.source;delete e.target.context;

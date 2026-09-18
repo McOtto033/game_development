@@ -45,4 +45,26 @@ function assertEffects(card) {
   assert.equal(debuff.stat,'AG');assert.equal(debuff.amount.reference,'AT');assert.equal(debuff.amount.value,.5);
   assert.deepEqual(card.skills.ultimate.effects.map(e=>e.typeId),['attack','buff','heal']);assert.equal(card.skills.ultimate.effects[1].target.source,'previousEffectTarget');
 }
-module.exports={editEffects,assertEffects};
+async function editStatusEffects(page) {
+  const input=path=>page.locator(`[data-bind="card.skills.middle.effects.${path}"]`);
+  await page.locator('[data-tab="effects"]').tap();await page.locator('[data-slot="middle"]').tap();
+  await input('0.typeId').selectOption('status');await input('0.details').fill('以前の補足も残す');
+  await input('0.statusId').selectOption('poison');await input('0.amount.mode').selectOption('none');await input('0.duration.mode').selectOption('turns');await input('0.duration.turns').fill('3');
+  assert.match(await page.locator('#preview').textContent(),/状態付与（毒） \/ 3T/);
+  await page.locator('#search').fill('毒');assert.equal(await page.locator('.library-card').count(),1);await page.locator('#search').fill('');
+  await input('0.statusId').selectOption('counter');await input('0.amount.mode').selectOption('multiplier');await input('0.amount.value').fill('0.5');
+  assert.match(await page.locator('#preview').textContent(),/状態付与（反撃）：AT×0.5 \/ 3T/);
+  await input('0.typeId').selectOption('heal');assert.equal(await input('0.statusId').count(),0);
+  await input('0.typeId').selectOption('status');assert.equal(await input('0.statusId').inputValue(),'counter');
+  await page.locator('[data-action="duplicate-effect"][data-index="0"]').tap();await input('1.statusId').selectOption('custom');await input('1.customStatus').fill('独自状態 <試作>');
+  assert.match(await page.locator('#preview').textContent(),/状態付与（独自状態 <試作>）/);
+  await input('1.statusId').selectOption('poison');await input('1.statusId').selectOption('custom');assert.equal(await input('1.customStatus').inputValue(),'独自状態 <試作>');
+  for(const width of [390,320]){await page.setViewportSize({width,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'状態欄の表示幅 '+width);}
+  await page.setViewportSize({width:390,height:844});
+}
+function assertStatusEffects(card) {
+  const [counter,custom]=card.skills.middle.effects;
+  assert.equal(counter.statusId,'counter');assert.equal(counter.amount.value,.5);assert.equal(counter.duration.turns,3);assert.equal(counter.details,'以前の補足も残す');
+  assert.equal(custom.statusId,'custom');assert.equal(custom.customStatus,'独自状態 <試作>');
+}
+module.exports={editEffects,assertEffects,editStatusEffects,assertStatusEffects};

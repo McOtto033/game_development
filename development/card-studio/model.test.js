@@ -2,7 +2,8 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const M=require('./model');
-const library=()=>({schemaVersion:1,revision:0,cards:[M.template('attack')],definitions:[]});
+// 既存データの回帰用。新規の構造化対象は targeting.test.js で検証する。
+const library=()=>{const d=M.template('attack');delete d.card.skills.front.effects[0].target.query;return {schemaVersion:1,revision:0,cards:[d],definitions:[]};};
 
 test('旧特性を保持し、共通特性と独立した数値・効果量を保存・取り込みできる',()=>{
   const old=library();old.cards[0].card.traits=[{name:'旧特性',value:'5',description:'既存の説明'}];M.validateLibrary(old);

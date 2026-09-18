@@ -11,7 +11,7 @@
 - 更新前のデータは端末内にもバックアップする。「前回の保存を書き出す」から直前の版をJSONに取り出せる。履歴とバックアップは自動削除しない。
 - 二つのタブで同時に編集した場合、古い版からの上書きを拒否し、入力中の内容を画面に保持する。
 
-GitHub Pagesには画面を構成する6ファイルだけを配置する。開発用DB・バックアップ・テスト・ローカルサーバーはPagesへ配置しない。
+GitHub Pagesには画面を構成する7ファイルだけを配置する。開発用DB・バックアップ・テスト・ローカルサーバーはPagesへ配置しない。
 
 ## PCのローカル版を起動
 
@@ -63,7 +63,11 @@ node development/card-studio/server.js
 
 未入力項目はプレビュー下部に表示する。これは下書きの記入漏れ確認であり、ルールの整合・採点・ゲーム採用可否を自動判定するものではない。新しい地形名も追加でき、未定義の地形アイコンには仮記号を使う。地形の補正値や正式アイコンは採用時に定義する。
 
-### 行動・効果から対象を決める
+### 対象条件・選択・再判定の新書式
+
+新規効果は [効果対象の記述規格](TARGETING.md) に沿って、既存の範囲と独立した候補区分、AND/OR/除外の条件、全員またはステータス順のX体、判定時点、同値/対象不在を入力する。連続攻撃の「対象固定」と「各回の直前に再サーチ」を別の値で保存する。自然言語の条件・選び方も原文で残せる。既存カードは旧書式を保持し、「条件を分けて編集する」から移す。
+
+### 行動・効果から対象を決める（旧書式）
 
 「対象の指定方法」を切り替えると、マス図に代えて対象の決め方を表示する。「参照する行動・効果」で発動契機の攻撃、直前の自身の行動などを補足できる。「その他」は対象の決め方を自由入力する。対象がいない場合の代替指定も可能。マス指定へ戻すと以前の範囲・サーチ条件が復元される。
 
@@ -136,7 +140,7 @@ library { schemaVersion: 1, revision, cards[], definitions[], traitDefinitions?[
       skill { enabled, name, trigger, condition, turns, effects[] }
         effect { id, typeId, stat?, customStat?, statusId?, customStatus?, repeatCount?, target,
                  amount, duration, condition, alternate, details, params }
-          target { source?, context?, basis, ally[], enemy[], allyOffsets?[],
+          target { source?, context?, query?, basis, ally[], enemy[], allyOffsets?[],
                    selection, count, rule, tie, fallback }
     notes { intent, strength, usage, winPlan, synergy, counter, references,
             scoring, risks, testPlan, results, learning }
@@ -159,7 +163,7 @@ library { schemaVersion: 1, revision, cards[], definitions[], traitDefinitions?[
 ## 検証
 
 ```powershell
-node --test development/card-studio/server.test.js development/card-studio/model.test.js
+node --test development/card-studio/server.test.js development/card-studio/model.test.js development/card-studio/targeting.test.js
 node development/card-studio/browser.test.js
 node development/card-studio/static-browser.test.js
 node scripts/verify.js
@@ -182,3 +186,5 @@ iPhone公開対応の追加検証：静的サブパス配信、端末内保存�
 2026-09-18追加改善：強化・弱体する項目、行動・効果からの対象指定、攻撃回数、必殺技3効果を実装。専用21/21、標準131/131 PASS。実Edgeで入力・プレビュー・3効果の複製/上限/並べ替え・保存再読込・別DBへのJSON受け渡しを確認し、1440/820/390/320pxで横はみ出しなし。390pxの新入力欄と必殺技3効果のプレビューも目視確認。実機iPhone/Safariは未検証。
 
 2026-09-18状態選択追加：専用22/22、標準131/131 PASS。実Edgeで毒/反撃の選択、独自状態名、効果種類の切替時の保持、日本語検索、プレビュー、保存再読込、別DBへのJSON受け渡しを確認。390/320pxで横はみ出しなし、状態入力画面の画像も確認。実機iPhone/Safariは未検証。
+
+2026-09-18対象書式追加：専用27/27、標準131/131 PASS。実EdgeでAND/OR/除外グループ、閾値と極値、状態/特性/現在地形/得意地形/分類、全体と味方内の行動順、自然言語、全員/上位X体、固定/毎回/イベント、旧書式の変換、保存再読込とJSON受け渡しを確認。対象条件の編集でマス範囲を変えないこと、1440/820/390/320pxで横はみ出しがないこと、390pxの条件入力の画像も確認。新書式の意味・具体例・本体接続時の残件は [TARGETING.md](TARGETING.md)。実機iPhone/Safariは未検証。

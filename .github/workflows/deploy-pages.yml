@@ -30,7 +30,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Verify Card Studio
-        run: node --test development/card-studio/model.test.js development/card-studio/server.test.js
+        run: node --test development/card-studio/model.test.js development/card-studio/targeting.test.js development/card-studio/server.test.js
 
       - name: Stage playable builds
         run: |
@@ -38,7 +38,7 @@ jobs:
           cp -R prototype/. "$RUNNER_TEMP/pages/"
           cp -R prototype prototype-comparison "$RUNNER_TEMP/pages/"
           mkdir -p "$RUNNER_TEMP/pages/card-studio"
-          for file in index.html app.js model.js storage.js styles.css favicon.svg; do
+          for file in index.html app.js model.js targeting.js storage.js styles.css favicon.svg; do
             cp "development/card-studio/$file" "$RUNNER_TEMP/pages/card-studio/"
           done
           touch "$RUNNER_TEMP/pages/.nojekyll"

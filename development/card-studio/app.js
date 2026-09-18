@@ -1,5 +1,6 @@
 'use strict';
 const M=window.StudioModel;
+const T=window.StudioTargeting;
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const stateNames={draft:'下書き',testing:'検証中',adopted:'採用',held:'保留',archived:'見送り'};
@@ -41,13 +42,37 @@ function traitDefinitionDialog() {
   showDialog('<div class="dialog-heading"><h2>共通特性を登録</h2><button data-action="close-dialog" aria-label="閉じる">×</button></div><form id="trait-definition-form"><label class="field"><span>特性名</span><input name="traitName" required maxlength="60" placeholder="共通で使う特性名"></label><label class="field"><span>共通の説明</span><textarea name="description" required rows="3" placeholder="数値や倍率を除いた、共通の効果説明"></textarea></label><p class="muted">数値と効果量はカードごとに設定できます。</p><p id="trait-definition-error" class="error-text" role="alert"></p><button class="primary" type="submit">共通特性を登録</button></form>');
 }
 function gridHtml(target,interactive=false,index=0,skillSlot=slot) {
-  return `<div class="target-pair ${interactive?'editable':''}">${['ally','enemy'].map(side=>`<div class="target-half ${side}"><small>${side==='ally'?'味方':'敵'}${target.selection==='search'?'候補':''}</small><div class="ranks">${(side==='ally'?['後','中','前']:['前','中','後']).map(x=>`<span>${x}</span>`).join('')}</div><div class="target-grid">${[0,1,2].flatMap(row=>(side==='ally'?[2,1,0]:[0,1,2]).map(col=>{const cell=row*3+col,active=M.targetCells(target,side,skillSlot).includes(cell),origin=side==='ally'&&cell===M.originCell(skillSlot);const attrs=interactive?`data-action="cell" data-index="${index}" data-side="${side}" data-cell="${cell}" aria-pressed="${active}" aria-label="${side==='ally'?'味方':'敵'} ${['左','中央','右'][row]} ${['前衛','中衛','後衛'][col]}" type="button"`:'';return `<${interactive?'button':'span'} ${attrs} class="cell ${active?'selected':''} ${target.selection==='search'?'candidate':''} ${origin?'origin':''}">${origin?'●':''}</${interactive?'button':'span'}>`;})).join('')}</div></div>`).join('')}</div>`;
+  const searching=target.query?target.query.pick.mode!=='all':target.selection==='search';
+  return `<div class="target-pair ${interactive?'editable':''}">${['ally','enemy'].map(side=>`<div class="target-half ${side}"><small>${side==='ally'?'味方':'敵'}${searching?'候補':''}</small><div class="ranks">${(side==='ally'?['後','中','前']:['前','中','後']).map(x=>`<span>${x}</span>`).join('')}</div><div class="target-grid">${[0,1,2].flatMap(row=>(side==='ally'?[2,1,0]:[0,1,2]).map(col=>{const cell=row*3+col,active=M.targetCells(target,side,skillSlot).includes(cell),origin=side==='ally'&&cell===M.originCell(skillSlot);const attrs=interactive?`data-action="cell" data-index="${index}" data-side="${side}" data-cell="${cell}" aria-pressed="${active}" aria-label="${side==='ally'?'味方':'敵'} ${['左','中央','右'][row]} ${['前衛','中衛','後衛'][col]}" type="button"`:'';return `<${interactive?'button':'span'} ${attrs} class="cell ${active?'selected':''} ${searching?'candidate':''} ${origin?'origin':''}">${origin?'●':''}</${interactive?'button':'span'}>`;})).join('')}</div></div>`).join('')}</div>`;
 }
 function effectsForm(d) {
   const s=d.card.skills[slot],p=`card.skills.${slot}`,limit=M.effectLimit(slot);
   return `<div class="section-heading"><h2>行動を組み立てる</h2><p>上の効果から順に実行。各効果に対象・量・条件を設定します。</p></div><nav class="slot-tabs" aria-label="行動枠">${M.slots.map(([key,label])=>`<button data-slot="${key}" class="${slot===key?'active':''}" aria-current="${slot===key?'page':'false'}">${label}<small>${d.card.skills[key].enabled?d.card.skills[key].effects.length+'効果':'なし'}</small></button>`).join('')}</nav><section class="panel"><div class="panel-title"><h3>${M.slots.find(x=>x[0]===slot)[1]}</h3><label class="switch"><input type="checkbox" data-bind="${p}.enabled" ${s.enabled?'checked':''}> この枠を使う</label></div>${s.enabled?`<div class="form-grid">${field('カード固有の行動名',p+'.name',s.name,{placeholder:'このカードだけの名称'})}${slot==='ultimate'?number('発動に必要なターン',p+'.turns',s.turns,'カード上では「5T」などと表示'):''}${field('共通の発動時点',p+'.trigger',s.trigger,{placeholder:'戦闘開始時 / 毎ターン開始時 など'})}${field('共通の発動条件',p+'.condition',s.condition,{placeholder:'HP50%以下 など'})}</div>`:'<p class="muted">カード上には「なし」と表示します。入力済みの内容は保持します。</p>'}</section>${s.enabled?`${s.effects.map((e,i)=>effectForm(e,i)).join('')}<button class="add-effect" data-action="add-effect" ${s.effects.length>=limit?'disabled':''}>＋ 効果を追加 <small>${s.effects.length} / ${limit}</small></button><p class="muted">同じ対象で条件により量だけが変わる場合は、効果内の「条件別の効果量」を使います。</p>`:''}`;
 }
+function conditionForm(c,path,i,depth=0) {
+  const button=(action,label,extra='')=>`<button class="quiet" data-action="${action}" data-index="${i}" data-condition-path="${esc(path)}" ${extra}>${label}</button>`;
+  if(c.kind==='group')return `<div class="condition-group" data-condition-group="${esc(path)}"><div class="condition-heading">${field('条件の組み合わせ',path+'.op',c.op,{select:[['all','すべて満たす（AND）'],['any','いずれか満たす（OR）'],['none','どれも満たさない（NOT OR）']]})}${depth?button('remove-condition','グループを削除'):''}</div>${c.items.map((item,n)=>conditionForm(item,path+'.items.'+n,i,depth+1)).join('')}<div class="condition-buttons">${button('add-condition','＋ 条件')}${depth<4?button('add-condition','＋ グループ','data-kind="group"'):''}</div>${!c.items.length?'<p class="muted">条件なし。候補をさらに絞り込みません。</p>':''}</div>`;
+  let fields='';
+  if(c.kind==='stat')fields=field('ステータス',path+'.stat',c.stat,{select:T.stats})+(c.stat==='custom'?field('能力名',path+'.customStat',c.customStat):'')+field('比較',path+'.operator',c.operator,{select:T.comparisons})+(!['min','max'].includes(c.operator)?field('比較する値',path+'.value',c.value,{type:'number',step:'any'}):'<p class="muted">範囲・参照元・陣営・生存状態で決まる候補内で比較（条件の絞り込み前）。同率を全員含みます。</p>');
+  if(c.kind==='attribute'){
+    const values=c.key==='status'?M.statuses.filter(x=>x[0]!=='custom').map(x=>x[1]):c.key==='trait'?M.traitDefinitions(library).map(x=>x.name):c.key==='class'?M.classes:[...new Set([...M.terrains.map(x=>x[0]),...current().card.terrains])];
+    fields=field('条件の項目',path+'.key',c.key,{select:T.attributes})+field('一致',path+'.operator',c.operator,{select:[['is','該当する／持つ'],['isNot','該当しない／持たない']]})+field('名称',path+'.value',c.value,{select:[['','選択してください'],...[...new Set([...values,...(c.value&&c.value!=='custom'?[c.value]:[])])].map(v=>[v,v]),['custom','その他（自由入力）']]})+(c.value==='custom'?field('独自の名称',path+'.customValue',c.customValue):'');
+  }
+  if(c.kind==='order')fields=field('行動順の方向',path+'.direction',c.direction,{select:[['previous','直前に行動した'],['next','直後に行動する']]})+field('何番目',path+'.offset',c.offset,{type:'number',min:1,step:1,hint:'1＝直前／直後、2＝二つ前／後'})+field('行動順を見る範囲',path+'.scope',c.scope,{select:[['global','敵味方全体'],['ally','味方の中'],['enemy','敵の中']],hint:'自身の今回の行動を基準に数える。陣営の条件は別に適用'});
+  if(c.kind==='custom')fields=field('自然言語の条件',path+'.text',c.text,{area:true,placeholder:'例：このターンに味方を回復したカード',hint:'定型化していない条件を原文で残せます。後で分類・テンプレート化できます。'});
+  return `<div class="condition-row"><div class="condition-heading">${field('条件の種類',path+'.kind',c.kind,{select:T.kinds})}${button('remove-condition','削除')}</div><div class="form-grid">${fields}</div></div>`;
+}
+function queryForm(q,i,p) {
+  const k=p+'.target.query';
+  return `<section class="target-query"><h4>対象条件・選び方</h4><p class="muted">候補 → 条件 → 選択の順に絞り込みます。上の対象範囲はそのまま使います。</p><div class="preset-buttons">${[['fixed','低HP1体・固定'],['repeat','低HP1体・毎回'],['all','条件に合う全員']].map(([key,label])=>`<button class="quiet" data-action="query-preset" data-index="${i}" data-preset="${key}">${label}</button>`).join('')}</div><h4>1. 候補の区分</h4><div class="form-grid">${field('対象の陣営',k+'.side',q.side,{select:T.sides})}${field('自身の扱い',k+'.self',q.self,{select:[['include','自身も含める'],['exclude','自身を除く'],['only','自身のみ']]})}${field('対象の生存状態',k+'.life',q.life,{select:[['alive','生存中'],['fallen','戦闘不能'],['any','問わない']]})}</div><h4>2. 対象条件</h4>${conditionForm(q.conditions,k+'.conditions',i)}<h4>3. 条件を満たした候補から選択</h4><div class="form-grid">${field('対象の選び方',k+'.pick.mode',q.pick.mode,{select:[['all','条件を満たす全員'],['rank','ステータス順にX体'],['custom','その他の選び方（自然言語）']]})}${q.pick.mode==='rank'?field('対象数 X',k+'.pick.count',q.pick.count,{type:'number',min:1,step:1}):''}${q.pick.mode==='rank'?field('並べ替えるステータス',k+'.pick.stat',q.pick.stat,{select:T.stats})+field('並び順',k+'.pick.direction',q.pick.direction,{select:[['asc','低い順'],['desc','高い順']]})+(q.pick.stat==='custom'?field('並べ替える能力名',k+'.pick.customStat',q.pick.customStat):''):''}${q.pick.mode==='custom'?field('自然言語の選び方',k+'.pick.text',q.pick.text,{area:true,placeholder:'例：まだ今回の行動で選んでいない対象を優先して1体',hint:'対象数も含めて記述'}):''}</div>${q.pick.mode!=='all'?`<div class="form-grid query-spacing">${field('同じ値の場合',k+'.pick.ties',q.pick.ties,{select:[['position','位置順でX体に絞る'],['include','境界の同値を全員含む'],['custom','優先順を指定する']],hint:q.pick.ties==='include'?'同値のためX体を超える場合があります。':'位置順：前→中→後、左→中央→右、両陣営の同位置は味方→敵'})}${q.pick.ties==='custom'?field('同値時の優先順',k+'.pick.tieText',q.pick.tieText):''}</div>`:''}<h4>4. 対象を判定・選び直す時点</h4>${field('再判定のタイミング',k+'.timing.mode',q.timing.mode,{select:T.timings,hint:q.timing.mode==='once'?'最初に決めたカードを保持。条件やステータスが変わっても選び直しません。':'条件と並び順をその時点の値で調べ直します。連続攻撃の途中で倒れた対象も再評価します。'})}${q.timing.mode==='event'?`<div class="form-grid">${field('再判定するイベント',k+'.timing.event',q.timing.event,{select:T.events})}${q.timing.event==='custom'?field('イベントの内容',k+'.timing.text',q.timing.text,{placeholder:'どの行動・効果を契機にするか'}):''}</div><p class="muted">発動そのものの時点・条件は、行動名の下の共通欄で指定します。</p>`:''}<h4>5. 対象がいない・対象が無効になった場合</h4>${field('対象なし／無効時',k+'.absence.mode',q.absence.mode,{select:[['skip','その回は不発（別対象で補充しない）'],['stop','この効果の残り回数を打ち切る'],['custom','自然言語で指定する']],hint:'固定時は最初の対象に対して適用。毎回選び直す場合は再サーチ後に適用。'})}${q.absence.mode==='custom'?field('対象なし／無効時の指定',k+'.absence.text',q.absence.text,{area:true}):''}</section>`;
+}
 function targetForm(e,i,p) {
+  const t=e.target;
+  if(!t.query)return `<div class="legacy-target"><p class="muted">従来の対象記述を保持しています。新しい書式へ移すと条件・選択・再判定を分けて編集できます。</p><button data-action="structure-target" data-index="${i}">条件を分けて編集する</button></div>`+legacyTargetForm(e,i,p);
+  const source=M.targetSource(t);
+  return field('候補の参照元',p+'.target.source',source,{select:M.targetSources})+(source==='grid'?`<div class="target-editor"><div><h4>対象範囲</h4>${gridHtml(t,true,i)}<p class="muted">●が自身。範囲と下の対象条件を組み合わせます。</p><div class="preset-buttons">${[['enemyAll','敵全体'],['enemyFront','敵前衛'],['allyFront','味方前衛'],['allyAll','味方全体'],['self','自身'],['clear','クリア']].map(([key,label])=>`<button class="quiet" data-action="target-preset" data-index="${i}" data-preset="${key}">${label}</button>`).join('')}</div></div>${field('範囲の基準',p+'.target.basis',t.basis,{select:[['absolute','絶対位置'],['relative','自身を基準にした相対位置']]})}</div>`:field(source==='custom'?'候補の参照元の内容':'参照する行動・効果（任意）',p+'.target.context',t.context||'',{placeholder:'発動契機となった攻撃など'}))+queryForm(t.query,i,p);
+}
+function legacyTargetForm(e,i,p) {
   const t=e.target,source=M.targetSource(t);
   const selector=field('対象の指定方法',p+'.target.source',source,{select:M.targetSources});
   if(source!=='grid')return '<div class="context-target-editor">'+selector+
@@ -87,6 +112,7 @@ function targetPreview(t,i,key) {
   return M.targetSource(t)==='grid'?gridHtml(t,false,i,key):'<div class="target-reference"><span aria-hidden="true">↪</span><small>行動・効果から指定</small></div>';
 }
 function targetDescription(t) {
+  if(t.query)return (M.targetSource(t)!=='grid'?'<p>対象：'+esc(M.targetText(t))+'</p>'+(t.context&&M.targetSource(t)!=='custom'?'<p>参照：'+esc(t.context)+'</p>':''):'')+T.summary(t.query).map(text=>'<p>'+esc(text)+'</p>').join('')+(t.basis==='relative'&&M.targetSource(t)==='grid'?'<p class="muted">相対範囲（●が自身）</p>':'');
   if(M.targetSource(t)==='grid')return (t.selection==='search'?'<p>'+esc(t.rule)+'・'+t.count+'体</p>'+(t.tie?'<p class="muted">同値：'+esc(t.tie)+'</p>':'')+(t.fallback?'<p>候補なし：'+esc(t.fallback)+'</p>':''):'')+(t.basis==='relative'?'<p class="muted">相対範囲（●が自身）</p>':'');
   return '<p class="context-target"><strong>対象：'+esc(M.targetText(t))+'</strong></p>'+(M.targetSource(t)!=='custom'&&t.context?'<p>参照：'+esc(t.context)+'</p>':'')+(t.fallback?'<p>対象なし：'+esc(t.fallback)+'</p>':'');
 }
@@ -129,6 +155,12 @@ function changeBound(el) {
   const path=el.dataset.bind;
   let value=el.type==='checkbox'?el.checked:el.type==='number'?(Number.isFinite(el.valueAsNumber)?el.valueAsNumber:0):el.value;
   if(path==='tags')value=value.split(/[,、]/).map(x=>x.trim()).filter(Boolean);
+  if(path.includes('.query.conditions.')&&path.endsWith('.kind')) {
+    const parent=path.slice(0,-5);setPath(d,parent,T.condition(value));markDirty();renderPreview();renderLibrary();return;
+  }
+  if(path.includes('.query.conditions.')&&path.endsWith('.key')){
+    setPath(d,path.slice(0,-4)+'.value','');setPath(d,path.slice(0,-4)+'.customValue','');
+  }
   if(path.endsWith('.typeId')) {
     const parts=path.split('.');parts.pop();let e=d;for(const k of parts)e=e[k];e.params={};
   }
@@ -176,6 +208,19 @@ document.addEventListener('click',event=>{
   if(action==='new-trait-definition'){traitDefinitionDialog();return;}
   if(action==='add-trait')d.card.traits.push({definitionId:'',name:'',value:'',effectAmount:'',description:''});
   if(action==='remove-trait')d.card.traits.splice(i,1);
+  if(action==='structure-target')s.effects[i].target.query=T.fromLegacy(s.effects[i].target);
+  if(action==='query-preset'){
+    const q=s.effects[i].target.query;
+    if(button.dataset.preset==='all')q.pick.mode='all';
+    else {Object.assign(q.pick,{mode:'rank',stat:'hp',direction:'asc',count:1});q.timing.mode=button.dataset.preset==='repeat'?'each':'once';}
+  }
+  if(action==='add-condition'||action==='remove-condition'){
+    const path=button.dataset.conditionPath,parts=path.split('.');let target=d;for(const part of parts)target=target[part];
+    if(action==='add-condition'){
+      const copy=M.clone(s.effects[i].target.query);target.items.push(T.condition(button.dataset.kind||'stat'));
+      try{T.validate(s.effects[i].target.query);}catch(error){s.effects[i].target.query=copy;toast(error.message,true);return;}
+    }else{const n=Number(parts.pop());parts.pop();let parent=d;for(const part of parts)parent=parent[part];parent.items.splice(n,1);}
+  }
   if(action==='add-effect'&&s.effects.length<M.effectLimit(slot))s.effects.push(M.effect());
   if(action==='duplicate-effect'&&s.effects.length<M.effectLimit(slot)){const e=M.clone(s.effects[i]);e.id=M.id('fx');s.effects.splice(i+1,0,e);}
   if(action==='remove-effect')s.effects.splice(i,1);
@@ -188,6 +233,7 @@ document.addEventListener('click',event=>{
     if(key==='allyAll')t.ally=[0,1,2,3,4,5,6,7,8];
     if(key==='allyFront')t.ally=[0,3,6];
     if(key==='self'){t.ally=[4];t.basis='relative';t.selection='all';}else t.basis='absolute';
+    if(t.query&&key!=='clear'){t.query.side=key.startsWith('enemy')?'enemy':'ally';if(key==='self')t.query.pick.mode='all';}
   }
   markDirty();refresh();
 });

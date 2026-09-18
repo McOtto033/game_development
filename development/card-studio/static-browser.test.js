@@ -4,9 +4,9 @@ const fs=require('node:fs/promises');
 const http=require('node:http');
 const path=require('node:path');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-const {editEffects,assertEffects,editStatusEffects,assertStatusEffects}=require('./effect-browser-checks');
+const {editEffects,assertEffects,editStatusEffects,assertStatusEffects,editTargeting,assertTargeting}=require('./effect-browser-checks');
 const base='/game_development/card-studio/';
-const allowed=['index.html','app.js','model.js','storage.js','styles.css','favicon.svg'];
+const allowed=['index.html','app.js','model.js','targeting.js','storage.js','styles.css','favicon.svg'];
 const requests=[];
 (async()=>{
   const server=http.createServer(async(req,res)=>{
@@ -40,6 +40,7 @@ const requests=[];
     }
     await editEffects(page);
     await editStatusEffects(page);
+    await editTargeting(page);
     await page.locator('[data-tab="notes"]').tap();await page.locator('[data-bind="notes.intent"]').fill('端末にだけ残す設計意図');
     await page.locator('#save').tap();await page.locator('#save-state').filter({hasText:'保存済み'}).waitFor();
     await page.reload();await page.getByLabel('カード名',{exact:true}).waitFor();assert.equal(await page.getByLabel('カード名',{exact:true}).inputValue(),'iPhoneの新カード');
@@ -51,6 +52,7 @@ const requests=[];
     assert.equal(db.cards[0].card.traits[0].effectAmount,'AT×1.25');assert.equal(db.cards[0].card.traits[0].value,'5');assert.equal(db.traitDefinitions[0].name,'共通特性の検証');
     assertEffects(db.cards[0].card);
     assertStatusEffects(db.cards[0].card);
+    assertTargeting(db.cards[0].card);
     const backupEvent=page.waitForEvent('download');await page.locator('[data-action="export-backup"]').tap();
     const backup=JSON.parse(await fs.readFile(await(await backupEvent).path(),'utf8'));assert.equal(backup.cards[0].card.at,30);
     const exportEvent=page.waitForEvent('download');await page.locator('#export-library').tap();const exported=await(await exportEvent).path();
@@ -59,6 +61,7 @@ const requests=[];
     await clean.locator('#json-file').setInputFiles(exported);await clean.locator('#save').tap();await clean.locator('#save-state').filter({hasText:'保存済み'}).waitFor();await clean.reload();assert.equal(await clean.getByLabel('AT',{exact:true}).inputValue(),'35');
     assertEffects(await clean.evaluate(async()=>(await StudioStorage.connect()).initialLibrary.cards[0].card));
     assertStatusEffects(await clean.evaluate(async()=>(await StudioStorage.connect()).initialLibrary.cards[0].card));
+    assertTargeting(await clean.evaluate(async()=>(await StudioStorage.connect()).initialLibrary.cards[0].card));
     await page.locator('[data-tab="effects"]').tap();await page.locator('[data-bind="card.skills.front.effects.0.target.source"]').selectOption('grid');await page.locator('[data-action="cell"][data-index="0"][data-side="ally"][data-cell="4"]').tap();
     assert.equal(await page.locator('[data-action="cell"][data-index="0"][data-side="ally"][data-cell="4"]').getAttribute('aria-pressed'),'true');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
@@ -67,7 +70,8 @@ const requests=[];
     await page.locator('[data-bind="card.skills.front.effects.0.target.source"]').selectOption('attackSource');await page.locator('[data-effect-index="0"]').screenshot({path:path.join(artifactDir,'attack-context-mobile.png')});await page.locator('[data-effect-index="1"]').screenshot({path:path.join(artifactDir,'debuff-mobile.png')});
     await page.locator('[data-slot="ultimate"]').tap();await page.locator('.preview-skill').filter({has:page.locator('h3',{hasText:'三段の検証'})}).screenshot({path:path.join(artifactDir,'ultimate-preview-mobile.png')});
     await page.locator('[data-slot="middle"]').tap();await page.locator('.editor-body').screenshot({path:path.join(artifactDir,'status-mobile.png')});
-    await fs.writeFile(path.join(artifactDir,'static-results.json'),JSON.stringify({passed:true,checks:['サブパス配信','端末内保存と再読込','タブ競合の保護','前回バックアップ出力','独立端末へのJSON取込','対象マスタップと390px表示','強化弱体する能力の独立指定','行動効果による対象指定','3回攻撃を1効果として保存','必殺技3効果の追加複製並替と上限','付与状態の選択・独自名・検索・切替保持','1440/820/390/320px表示','公開先への書込通信なし'],webkitTested:false},null,2));
+    await page.locator('[data-slot="rear"]').tap();await page.locator('.target-query').screenshot({path:path.join(artifactDir,'target-query-mobile.png')});
+    await fs.writeFile(path.join(artifactDir,'static-results.json'),JSON.stringify({passed:true,checks:['サブパス配信','端末内保存と再読込','タブ競合の保護','前回バックアップ出力','独立端末へのJSON取込','対象マスタップと390px表示','強化弱体する能力の独立指定','行動効果による対象指定','3回攻撃を1効果として保存','必殺技3効果の追加複製並替と上限','付与状態の選択・独自名・検索・切替保持','対象条件の複合・属性・行動順・自然文・全員/順位・固定/再サーチ・旧形式移行','1440/820/390/320px表示','公開先への書込通信なし'],webkitTested:false},null,2));
     console.log('PASS: static subpath, device persistence, conflict, backup, JSON transfer, mobile touch, no remote writes');
   }finally{await browser?.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;});

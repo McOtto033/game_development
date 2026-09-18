@@ -11,6 +11,7 @@ const STATIC_FILES = new Map([
   ['/index.html', 'index.html'],
   ['/app.js', 'app.js'],
   ['/model.js', 'model.js'],
+  ['/targeting.js', 'targeting.js'],
   ['/storage.js', 'storage.js'],
   ['/styles.css', 'styles.css'],
   ['/favicon.svg', 'favicon.svg'],

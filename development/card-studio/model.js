@@ -6,6 +6,14 @@
   'use strict';
   const slots = [['front','前衛'],['middle','中衛'],['rear','後衛'],['ultimate','必殺技'],['alpha','αスキル']];
   const effectLimit = slot => slot==='ultimate'?3:2;
+  const effectTimings=[['inherit','行動の発動時（共通設定に従う）'],['battleStart','戦闘開始時'],['turnStart','ターン開始時'],['turnEnd','ターン終了時'],['beforeAttack','自身の攻撃直前'],['afterAttack','自身の攻撃直後'],['afterAttacked','自身が攻撃を受けた直後'],['afterDamaged','自身がダメージを受けた直後'],['custom','その他（自由入力）']];
+  const effectTimingText=e=>e.triggerTiming==='custom'?(e.customTriggerTiming||'発動タイミング未入力'):effectTimings.find(([key])=>key===(e.triggerTiming||'inherit'))[1];
+  function placementText(c){
+    const cells=c.initialPlacementForbidden||[],remaining=new Set(cells),parts=[];
+    for(let col=0;col<3;col++)if([col,col+3,col+6].every(n=>remaining.has(n))){parts.push(['前衛','中衛','後衛'][col]+'不可');[col,col+3,col+6].forEach(n=>remaining.delete(n));}
+    for(const cell of [...remaining].sort((a,b)=>a-b))parts.push(['左','中央','右'][Math.floor(cell/3)]+['前衛','中衛','後衛'][cell%3]+'不可');
+    return parts.join('・')||'制限なし';
+  }
   const stats = [['AT','AT'],['AG','AG'],['HP','HP（現在値）'],['maxHP','最大HP'],['armor','装甲'],['custom','その他（自由入力）']];
   const statuses = [['poison','毒'],['healBlock','回復封じ'],['defenseDown','防御低下'],['contactPoison','接触毒'],['reflectShell','反射殻'],['armor','装甲（ダメージカット）'],['counter','反撃'],['regen','継続回復'],['paralysis','麻痺'],['barrier','バリア'],['custom','その他（自由入力）']];
   const statusText = e => e.statusId==='custom'?(e.customStatus||'状態名未入力'):statuses.find(([key])=>key===e.statusId)?.[1]||'';
@@ -53,18 +61,18 @@
     t.basis=basis;
   }
   function effect(typeId='attack') {
-    return {id:id('fx'),typeId,stat:'',customStat:'',repeatCount:1,target:{query:T.create(),source:'grid',context:'',basis:'absolute',ally:[],enemy:[0,1,2,3,4,5,6,7,8],selection:'search',count:1,rule:'残HPが最も低い対象',tie:'前衛→中衛→後衛、同じ衛では左→中央→右',fallback:''},amount:{mode:'multiplier',reference:'AT',value:1,expression:''},duration:{mode:'instant',turns:2},condition:'',alternate:{condition:'',amount:''},details:'',params:{}};
+    return {id:id('fx'),typeId,triggerTiming:'inherit',customTriggerTiming:'',stat:'',customStat:'',repeatCount:1,target:{mode:'area',query:T.create(),source:'grid',context:'',basis:'absolute',ally:[],enemy:[0,1,2,3,4,5,6,7,8],selection:'search',count:1,rule:'残HPが最も低い対象',tie:'前衛→中衛→後衛、同じ衛では左→中央→右',fallback:''},amount:{mode:'multiplier',reference:'AT',value:1,expression:''},duration:{mode:'instant',turns:2},condition:'',alternate:{condition:'',amount:''},details:'',params:{}};
   }
   function blank() {
     const now=new Date().toISOString();
-    return {id:id('design'),gameCardId:'',artCredit:'',status:'draft',tags:[],createdAt:now,updatedAt:now,card:{name:'新しいカード',artwork:'',cost:3,alphaCost:3,rarity:'C',classification:'哺乳類',terrains:[],traits:[],hp:100,at:30,ag:20,skills:Object.fromEntries(slots.map(([key])=>[key,{enabled:false,name:'',trigger:'',condition:'',turns:5,effects:[]}]))},notes:Object.fromEntries([...conceptFields,...evaluationFields].map(([key])=>[key,''])),history:[]};
+    return {id:id('design'),gameCardId:'',artCredit:'',status:'draft',tags:[],createdAt:now,updatedAt:now,card:{name:'新しいカード',artwork:'',cost:3,alphaCost:3,rarity:'C',classification:'哺乳類',terrains:[],traits:[],initialPlacementForbidden:[],deckLimit:null,hp:100,at:30,ag:20,skills:Object.fromEntries(slots.map(([key])=>[key,{enabled:false,name:'',trigger:'',condition:'',turns:5,effects:[]}]))},notes:Object.fromEntries([...conceptFields,...evaluationFields].map(([key])=>[key,''])),history:[]};
   }
   function template(kind='blank') {
     const d=blank();
     if(kind==='attack') {
       d.card.name='攻撃型・新規設計';
       d.card.skills.front={enabled:true,name:'一閃',trigger:'',condition:'',turns:5,effects:[effect()]};
-      d.tags=['攻撃型'];
+      d.card.skills.front.effects[0].target.mode='search';d.tags=['攻撃型'];
     } else if(kind==='support') {
       d.card.name='支援型・新規設計'; d.card.classification='植物';
       const heal=effect('heal');heal.target.query.pick.mode='all';heal.target.query.side='ally';heal.target={...heal.target,ally:[0,3,6],enemy:[],selection:'all',rule:''};heal.amount.value=.5;
@@ -119,6 +127,8 @@
       const c=d.card;check(object(c)&&['name','artwork','classification'].every(k=>str(c[k]))&&['C','R','SR','UR'].includes(c.rarity),'カード名・分類・レアリティなどの基本情報が不正です。');
       check(!c.artwork||/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(c.artwork),'イラストはPNG/JPEG/WebPの埋め込み画像を指定してください。');
       check(['cost','alphaCost','hp','at','ag'].every(k=>integer(c[k])),'コスト・HP・AT・AGは0以上の整数で入力してください。');
+      check(c.initialPlacementForbidden===undefined||(Array.isArray(c.initialPlacementForbidden)&&c.initialPlacementForbidden.every(v=>integer(v)&&v<9)&&unique(c.initialPlacementForbidden)),'初期配置の禁止マスは0〜8の重複しない番号で指定してください。');
+      check(c.deckLimit===undefined||c.deckLimit===null||(Number.isSafeInteger(c.deckLimit)&&c.deckLimit>0),'枚数制限は制限なし、または1以上の整数で指定してください。');
       check(Array.isArray(c.terrains)&&c.terrains.every(str)&&Array.isArray(c.traits),'得意地形・特性の形式が不正です。');
       for(const t of c.traits){
         check(object(t)&&str(t.name)&&str(t.value)&&str(t.description)&&(t.effectAmount===undefined||str(t.effectAmount)),'特性は名前・数値・効果量・説明を持つ形式にしてください。');
@@ -130,6 +140,9 @@
         for(const e of s.effects) {
           check(object(e)&&str(e.id)&&defs.some(x=>x.id===e.typeId)&&str(e.condition)&&str(e.details),`${label}に未登録の効果種類、または不正な効果があります。`);
           const t=e.target,a=e.amount,u=e.duration;
+          check(e.triggerTiming===undefined||effectTimings.some(([key])=>key===e.triggerTiming),'効果発動タイミングが不正です。');
+          check(e.customTriggerTiming===undefined||str(e.customTriggerTiming),'独自の発動タイミングは文字で指定してください。');
+          check(t?.mode===undefined||['area','search'].includes(t.mode),'対象の指定モードが不正です。');
           check(e.stat===undefined||e.stat===''||stats.some(([key])=>key===e.stat),'強化・弱体する項目が不正です。');
           check(e.customStat===undefined||str(e.customStat),'強化・弱体する独自項目は文字で入力してください。');
           check(e.statusId===undefined||e.statusId===''||statuses.some(([key])=>key===e.statusId),'付与する状態が不正です。');
@@ -157,6 +170,7 @@
     if(!c.artwork)out.push('イラストを登録する');
     if(!c.classification.trim())out.push('分類を指定する');
     if(!d.notes.intent.trim())out.push('設計の意図を記録する');
+    if(c.initialPlacementForbidden?.length===9)out.push('初期配置の全マスが禁止されているため、配置できるマスを残す');
     for(const t of c.traits)if(!t.name.trim()||!t.description.trim())out.push('特性名とタップ時の説明を記入する');
     for(const [key,label] of slots) {
       const s=c.skills[key];if(!s.enabled)continue;
@@ -168,7 +182,8 @@
           if(!e.target.query&&e.target.selection==='search'&&!e.target.rule.trim())out.push(`${label}のサーチ条件を記入する`);
         } else if(targetSource(e.target)==='custom'&&!e.target.context?.trim())out.push(`${label}の対象の決め方を記入する`);
         if(targetSource(e.target)==='previousEffectTarget'&&s.effects.indexOf(e)===0)out.push(`${label}の先頭の効果には、直前の効果がないため対象を変更する`);
-        if(e.target.query)out.push(...T.warnings(e.target.query).map(x=>label+'の'+x));
+        if(e.target.query)out.push(...T.warnings(T.effective(e.target)).map(x=>label+'の'+x));
+        if(e.triggerTiming==='custom'&&!e.customTriggerTiming?.trim())out.push(`${label}の効果発動タイミングを記入する`);
         if(['buff','debuff'].includes(e.typeId)&&(!e.stat||(e.stat==='custom'&&!e.customStat?.trim())))out.push(`${label}の強化・弱体する項目を指定する`);
         if(e.typeId==='status'&&(!e.statusId||(e.statusId==='custom'&&!e.customStatus?.trim())))out.push(`${label}の付与する状態を指定する`);
         if(e.alternate.condition&&!e.alternate.amount)out.push(`${label}の条件成立時の効果量を記入する`);
@@ -216,6 +231,6 @@
     }
     validateLibrary(merged);return {library:merged,added,copied};
   }
-  function exportCard(d) {return {schemaVersion:1,format:'card-design-spec',designId:d.id,gameCardId:d.gameCardId,card:clone(d.card)};}
-  return {slots,effectLimit,stats,statText,statuses,statusText,targetSources,targetSource,targetText,classes,classIcons,terrains,builtins,builtinTraits,traitDefinitions,originCell,targetCells,toggleTargetCell,changeTargetBasis,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard};
+  function exportCard(d) {return {schemaVersion:1,format:'card-design-spec',designId:d.id,gameCardId:d.gameCardId,card:{...clone(d.card),initialPlacementForbidden:clone(d.card.initialPlacementForbidden||[]),deckLimit:d.card.deckLimit??null}};}
+  return {slots,effectLimit,effectTimings,effectTimingText,placementText,stats,statText,statuses,statusText,targetSources,targetSource,targetText,classes,classIcons,terrains,builtins,builtinTraits,traitDefinitions,originCell,targetCells,toggleTargetCell,changeTargetBasis,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard};
 });

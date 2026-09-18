@@ -30,7 +30,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Verify Card Studio
-        run: node --test development/card-studio/model.test.js development/card-studio/targeting.test.js development/card-studio/server.test.js
+        run: node --test development/card-studio/model.test.js development/card-studio/targeting.test.js development/card-studio/restrictions.test.js development/card-studio/server.test.js
 
       - name: Stage playable builds
         run: |

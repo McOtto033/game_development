@@ -28,7 +28,7 @@ node development/card-studio/server.js
 ## 最短の使い方
 
 1. 「新しいカード」から白紙・攻撃型・支援型を選ぶ。サンプル名・数値は入力例で、採用カードではない。
-2. 「基本情報」で名前、レアリティ、コスト、分類、HP/AT/AG、イラスト、得意地形、特性を入力する。
+2. 「基本情報」で名前、レアリティ、コスト、分類、HP/AT/AG、イラスト、得意地形、特性、初期配置制限・枚数制限を入力する。
 3. 「行動・効果」で前衛・中衛・後衛・必殺技・αスキルを選び、「この枠を使う」を設定する。
 4. マスまたは行動・効果から対象を指定し、効果種類・量・期間・条件を入力する。複数効果は上下の矢印で実行順を変える。
 5. 「設計メモ」に意図・用途・性能評価・検証計画などを記入する。「調整履歴」に今回の変更理由や検証結果を記入する。
@@ -40,19 +40,23 @@ node development/card-studio/server.js
 
 ## 入力様式と表示規格
 
-本UIは開発段階の表示確認を担う。以下に入力規格をまとめる。ローカル開発時の詳細な正本は `docs/card-presentation-standard-v1.md`、`docs/card-development-notes-v1.md`、本体UIの作業一覧は `docs/card-ui-implementation-checklist-v1.md`（この公開単位には含めない）。
+本UIは開発段階の表示確認を担う。[18項目のカード情報規格](CARD_INFORMATION.md) と以下の入力規格を参照する。ローカル開発時の詳細な正本は `docs/card-presentation-standard-v1.md`、`docs/card-development-notes-v1.md`、本体UIの作業一覧は `docs/card-ui-implementation-checklist-v1.md`（この公開単位には含めない）。
 
 | 項目 | 入力・表示 |
 |---|---|
-| 基本情報 | 必須16項目の枠。C/R/SR/UR、通常コストは数字、αコストは採用時の総コストとして `α3` 等 |
+| 基本情報 | 必須18項目の枠。C/R/SR/UR、通常コストは数字、αコストは採用時の総コストとして `α3` 等 |
 | イラスト | PNG/JPEG/WebP、1枚2MiBまで。開発DBに埋め込む。出典メモは開発用 |
 | 分類 | 分類選択＋アイコン。クリック・タップで分類名と説明 |
 | 得意地形 | 複数選択し全アイコンを表示。未選択は空欄。クリックで得意地形の説明と全地形名 |
 | 特性 | 共通の一覧から選択。数値と効果量（例：`AT×1.0`）は独立して入力。クリックで共通説明と効果量。0件は「なし」 |
+| 初期配置制限 | 初期配置できないマスを×で指定。衛ごとの一括指定も可。未指定は制限なし |
+| 枚数制限 | 制限なし／n枚制限を選択。同名単位ではなく該当する制限カードの合算区分 |
 | 五つの行動枠 | 枠ごとに固有名、共通の発動時点・条件。必殺技は最大3効果、その他は最大2効果。無効は「なし」、入力済みデータは保持 |
 | 効果の順序 | 上から順に実行する設計として記録。D4の同AG解決規則を変更するものではない |
 | 対象 | マス指定は味方・敵の3×3で範囲内すべて／サーチ。行動・効果からの指定は攻撃してきた相手、攻撃した相手、効果の発生元、直前の効果の対象、自由入力から選択 |
-| 自身の位置・相対対象 | `●` は前衛行動なら前衛中央、中衛行動なら中衛中央、後衛行動なら後衛中央。αスキル・必殺技は配置未指定のため中衛中央で仮表示。相対対象はこの位置を基準に描画する |
+| 自身の位置・相対対象 | 絶対位置にはマークを表示しない。相対位置の `●` は前衛行動なら前衛中央、中衛行動なら中衛中央、後衛行動なら後衛中央。αスキル・必殺技は配置未指定のため中衛中央で仮表示。相対対象はこの位置を基準に描画する |
+| 対象図の塗り分け | 効果範囲は塗りつぶし、サーチ範囲は斜線＋破線。見出し・凡例を併記 |
+| 個別の発動タイミング | 共通設定に従う／戦闘・ターン開始／ターン終了／攻撃前後／被攻撃・被ダメージ後／自由入力。対象の固定・再選択とは別 |
 | 効果量 | 能力値×倍率／固定値／割合／自由記述／量なし。倍率入力は0.05刻み。自由記述は式を計算・実行しない |
 | 参照元 | 自身のATは `AT`。他は `対象のAT`、`自身の最大HP` など明記 |
 | 強化・弱体する項目 | AT／AG／HP（現在値）／最大HP／装甲／その他。その他は能力・効果名を自由入力。変化量の参照元とは独立し、例：`強化（AG）：AT×0.5` |
@@ -65,7 +69,7 @@ node development/card-studio/server.js
 
 ### 対象条件・選択・再判定の新書式
 
-新規効果は [効果対象の記述規格](TARGETING.md) に沿って、既存の範囲と独立した候補区分、AND/OR/除外の条件、全員またはステータス順のX体、判定時点、同値/対象不在を入力する。連続攻撃の「対象固定」と「各回の直前に再サーチ」を別の値で保存する。自然言語の条件・選び方も原文で残せる。既存カードは旧書式を保持し、「条件を分けて編集する」から移す。
+「範囲内すべて」では範囲の入力だけで対象指定を完結させる。「サーチ」を選ぶと、[効果対象の記述規格](TARGETING.md) に沿って条件、全員またはステータス順のX体を入力できる。候補区分や同値/対象不在は必要時に開く。範囲内すべてへ切り替えるとサーチ条件を適用せず隠し、サーチへ戻すと入力内容を復元する。効果の発動タイミングと対象の判定時点は両方の形式で指定できる。連続攻撃の「対象固定」と「各回の直前に再サーチ」を別の値で保存する。自然言語の条件・選び方も原文で残せる。既存カードは旧書式を保持し、「条件を分けて編集する」から移す。
 
 ### 行動・効果から対象を決める（旧書式）
 
@@ -136,11 +140,11 @@ library { schemaVersion: 1, revision, cards[], definitions[], traitDefinitions?[
   cards[]
     id, gameCardId, artCredit, status, tags, createdAt, updatedAt
     card { name, artwork, cost, alphaCost, rarity, classification,
-           terrains[], traits[], hp, at, ag, skills { front, middle, rear, ultimate, alpha } }
+           terrains[], traits[], initialPlacementForbidden[], deckLimit, hp, at, ag, skills { front, middle, rear, ultimate, alpha } }
       skill { enabled, name, trigger, condition, turns, effects[] }
         effect { id, typeId, stat?, customStat?, statusId?, customStatus?, repeatCount?, target,
-                 amount, duration, condition, alternate, details, params }
-          target { source?, context?, query?, basis, ally[], enemy[], allyOffsets?[],
+                 triggerTiming?, customTriggerTiming?, amount, duration, condition, alternate, details, params }
+          target { mode?, source?, context?, query?, basis, ally[], enemy[], allyOffsets?[],
                    selection, count, rule, tie, fallback }
     notes { intent, strength, usage, winPlan, synergy, counter, references,
             scoring, risks, testPlan, results, learning }
@@ -163,7 +167,7 @@ library { schemaVersion: 1, revision, cards[], definitions[], traitDefinitions?[
 ## 検証
 
 ```powershell
-node --test development/card-studio/server.test.js development/card-studio/model.test.js development/card-studio/targeting.test.js
+node --test development/card-studio/server.test.js development/card-studio/model.test.js development/card-studio/targeting.test.js development/card-studio/restrictions.test.js
 node development/card-studio/browser.test.js
 node development/card-studio/static-browser.test.js
 node scripts/verify.js
@@ -188,3 +192,7 @@ iPhone公開対応の追加検証：静的サブパス配信、端末内保存�
 2026-09-18状態選択追加：専用22/22、標準131/131 PASS。実Edgeで毒/反撃の選択、独自状態名、効果種類の切替時の保持、日本語検索、プレビュー、保存再読込、別DBへのJSON受け渡しを確認。390/320pxで横はみ出しなし、状態入力画面の画像も確認。実機iPhone/Safariは未検証。
 
 2026-09-18対象書式追加：専用27/27、標準131/131 PASS。実EdgeでAND/OR/除外グループ、閾値と極値、状態/特性/現在地形/得意地形/分類、全体と味方内の行動順、自然言語、全員/上位X体、固定/毎回/イベント、旧書式の変換、保存再読込とJSON受け渡しを確認。対象条件の編集でマス範囲を変えないこと、1440/820/390/320pxで横はみ出しがないこと、390pxの条件入力の画像も確認。新書式の意味・具体例・本体接続時の残件は [TARGETING.md](TARGETING.md)。実機iPhone/Safariは未検証。
+
+2026-09-18 構築制限・対象UI簡略化：初期配置制限と枚数制限を必須18項目に追加。範囲内すべて／サーチの入力分離、絶対位置の自身マーク非表示、相対位置の表示、効果範囲とサーチ範囲の塗り分け、個別の発動時点を反映。枚数制限の合算方向は確認待ちで、数値区分の入力・保存・表示までを実装する。詳細は [カード情報規格](CARD_INFORMATION.md)。
+
+検証：専用32/32、標準131/131 PASS。実Edgeで禁止マスの個別／衛一括／解除、枚数区分、保存再読込と別DBへの取り込み、直接範囲／サーチの切替と入力保持、個別の発動時点、絶対／相対の自身マーク、斜線／塗りつぶしを確認。390/320pxの新入力に横はみ出しなし。実機iPhone/Safariは未検証。

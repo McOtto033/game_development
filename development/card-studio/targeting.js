@@ -6,6 +6,18 @@
   const attributes=[['status','状態'],['trait','特性'],['terrain','現在の地形'],['preferredTerrain','得意地形'],['class','分類']];
   const sides=[['both','敵味方'],['ally','味方'],['enemy','敵']];
   const timings=[['once','効果開始時に1回（対象を固定）'],['each','各回の実行直前（毎回選び直す）'],['event','指定イベントが起きるたび']];
+  function mode(t){
+    const q=t.query;
+    if(!q)return t.selection==='all'?'area':'search';
+    if(t.mode)return t.mode;
+    const sideFits=q.side==='both'||((!t.source||t.source==='grid')&&((q.side==='ally'&&!t.enemy.length)||(q.side==='enemy'&&!t.ally.length)));
+    return q.pick.mode==='all'&&!q.conditions.items.length&&q.self==='include'&&q.life==='alive'&&q.absence.mode==='skip'&&sideFits?'area':'search';
+  }
+  function effective(t){
+    const q=t.query||fromLegacy(t);
+    if(mode(t)==='search')return q;
+    const direct=create();direct.pick.mode='all';direct.timing={...q.timing};return direct;
+  }
   const label=(pairs,key)=>pairs.find(x=>x[0]===key)?.[1]||key;
   const statName=r=>r.stat==='custom'?(r.customStat||'能力名未入力'):label(stats,r.stat);
   const group=()=>({kind:'group',op:'all',items:[]});
@@ -84,5 +96,5 @@
     if(q.side==='enemy'&&q.self==='only')out.push('敵のみと自身のみの矛盾を解消する');
     return out;
   }
-  return {stats,comparisons,kinds,attributes,sides,timings,events,label,group,condition,create,fromLegacy,conditionText,summary,validate,warnings};
+  return {stats,comparisons,kinds,attributes,sides,timings,events,label,group,condition,create,fromLegacy,conditionText,summary,validate,warnings,mode,effective};
 });

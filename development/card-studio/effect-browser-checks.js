@@ -73,7 +73,9 @@ async function editTargeting(page) {
   const input=path=>page.locator(`[data-bind="${path}"]`);
   const add=(path,group=false)=>page.locator(`[data-action="add-condition"][data-condition-path="${path}"]${group?'[data-kind="group"]':':not([data-kind])'}`);
   await page.locator('[data-tab="effects"]').tap();await page.locator('[data-slot="rear"]').tap();
+  await page.locator('[data-bind="card.skills.rear.effects.0.target.mode"]').selectOption('search');
   await page.locator('[data-action="target-preset"][data-index="0"][data-preset="enemyAll"]').tap();
+  await page.locator('[data-effect-index="0"] .search-extra summary').tap();await input(base+'.side').selectOption('enemy');
   const cells=()=>page.locator('[data-effect-index="0"] .cell.selected').evaluateAll(nodes=>nodes.map(n=>n.dataset.side+':'+n.dataset.cell));const before=await cells();
   await add(root).tap();await input(root+'.items.0.stat').selectOption('AT');await input(root+'.items.0.operator').selectOption('gte');await input(root+'.items.0.value').fill('20');
   await add(root,true).tap();const nested=root+'.items.1';await input(nested+'.op').selectOption('any');
@@ -84,7 +86,7 @@ async function editTargeting(page) {
   await add(root).tap();await input(root+'.items.3.kind').selectOption('custom');await input(root+'.items.3.text').fill('このターンに味方を回復したカード <条件>');
   await add(root,true).tap();await input(root+'.items.4.op').selectOption('none');await add(root+'.items.4').tap();await input(root+'.items.4.items.0.operator').selectOption('max');assert.match(await page.locator('#preview').textContent(),/同率を含む/);
   await page.locator(`[data-action="remove-condition"][data-condition-path="${root}.items.4"]`).tap();
-  await input(base+'.pick.mode').selectOption('rank');await input(base+'.pick.stat').selectOption('AG');await input(base+'.pick.direction').selectOption('desc');await input(base+'.pick.count').fill('2');await input(base+'.pick.ties').selectOption('include');
+  await input(base+'.pick.mode').selectOption('rank');await input(base+'.pick.stat').selectOption('AG');await input(base+'.pick.direction').selectOption('desc');await input(base+'.pick.count').fill('2');await page.locator('[data-effect-index="0"] .search-ties summary').tap();await input(base+'.pick.ties').selectOption('include');
   assert.match(await page.locator('#preview').textContent(),/AGが高い順に2体/);assert.match(await page.locator('#preview').textContent(),/X体を超える/);
   await input(base+'.timing.mode').selectOption('event');await input(base+'.timing.event').selectOption('custom');await input(base+'.timing.text').fill('味方が攻撃を受けた直後');assert.match(await page.locator('#preview').textContent(),/味方が攻撃を受けた直後/);
   await page.locator('[data-action="query-preset"][data-index="0"][data-preset="all"]').tap();assert.equal(await input(base+'.pick.count').count(),0);assert.match(await page.locator('#preview').textContent(),/条件に合う全員/);
@@ -104,4 +106,50 @@ function assertTargeting(card) {
   assert.equal(q.side,'enemy');assert.equal(q.conditions.items.length,4);assert.equal(q.conditions.items[0].value,20);assert.equal(q.conditions.items[1].op,'any');assert.equal(q.conditions.items[1].items[1].value,'植物');assert.equal(q.conditions.items[2].direction,'next');assert.equal(q.conditions.items[2].scope,'global');assert.match(q.conditions.items[3].text,/<条件>/);
   assert.equal(q.pick.stat,'hp');assert.equal(q.pick.count,1);assert.equal(q.timing.mode,'each');assert.equal(e.repeatCount,3);assert.deepEqual(e.target.enemy,[0,1,2,3,4,5,6,7,8]);
 }
-module.exports={editEffects,assertEffects,editStatusEffects,assertStatusEffects,editTargeting,assertTargeting};
+async function editCompactForms(page,artifactDir) {
+  const input=path=>page.locator(`[data-bind="${path}"]`),p='card.skills.rear.effects.0',t=p+'.target';
+  const capture=async(name,locator)=>{if(artifactDir){await require('node:fs/promises').mkdir(artifactDir,{recursive:true});await locator.screenshot({path:require('node:path').join(artifactDir,name+'.png')});}};
+  await page.locator('[data-tab="basic"]').tap();
+  const rank=page.locator('[data-action="restriction-rank"][data-rank="0"]');
+  await rank.tap();assert.match(await page.locator('.restriction-summary').textContent(),/前衛不可/);
+  await page.locator('[data-action="restriction-cell"][data-cell="1"]').tap();
+  await rank.tap();assert.equal(await page.locator('[data-action="restriction-cell"][aria-pressed="true"]').count(),1);
+  await rank.tap();assert.equal(await page.locator('[data-action="restriction-cell"][aria-pressed="true"]').count(),4);
+  await page.locator('[data-action="clear-restrictions"]').tap();assert.equal(await page.locator('[data-action="restriction-cell"][aria-pressed="true"]').count(),0);
+  await rank.tap();await input('card.deckLimit').selectOption('2');assert.equal(await input('card.deckLimit').inputValue(),'2');
+  assert.match(await page.locator('.preview-restrictions').textContent(),/前衛不可.*2枚制限/);
+  await capture('construction-restrictions-mobile',page.locator('.construction-restrictions'));
+  for(const width of [390,320]){await page.setViewportSize({width,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'制限欄 '+width);}
+  await page.setViewportSize({width:390,height:844});
+  await page.locator('[data-tab="effects"]').tap();await page.locator('[data-slot="rear"]').tap();
+  const effect=page.locator('[data-effect-index="0"]');
+  await input(t+'.basis').selectOption('absolute');assert.equal(await effect.locator('.origin').count(),0);
+  assert.equal(await effect.locator('.target-pair.search-range').count(),1);
+  assert.match(await effect.locator('.cell.selected').first().evaluate(n=>getComputedStyle(n).backgroundImage),/repeating-linear-gradient/);
+  await input(t+'.query.pick.mode').selectOption('all');assert.equal(await effect.locator('.target-pair.search-range').count(),1,'サーチ条件を満たす全員も斜線表示');
+  await input(t+'.query.pick.mode').selectOption('rank');
+  await input(t+'.mode').selectOption('area');assert.equal(await effect.locator('.target-query').count(),0);
+  assert.equal(await effect.locator('.target-pair.effect-range').count(),1);
+  assert.equal(await effect.locator('.cell.selected').first().evaluate(n=>getComputedStyle(n).backgroundImage),'none');
+  assert.doesNotMatch(await page.locator('#preview').textContent(),/ATが20以上/,'範囲内すべてに非表示の条件を適用しない');
+  assert.equal(await input(t+'.query.timing.mode').isVisible(),true);
+  await input(p+'.triggerTiming').selectOption('custom');await input(p+'.customTriggerTiming').fill('味方が倒れた直後');
+  assert.match(await page.locator('#preview').textContent(),/発動：味方が倒れた直後/);
+  await input(p+'.triggerTiming').selectOption('afterAttacked');
+  await input(t+'.basis').selectOption('relative');assert.equal(await effect.locator('.origin').getAttribute('data-cell'),'5');
+  await capture('direct-target-mobile',effect);
+  for(const width of [390,320]){await page.setViewportSize({width,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'簡易対象欄 '+width);}
+  await page.setViewportSize({width:390,height:844});
+  await input(t+'.mode').selectOption('search');assert.equal(await input(t+'.query.conditions.items.0.value').inputValue(),'20');
+  assert.equal(await input(t+'.query.conditions.items.1.items.1.value').inputValue(),'植物');
+  assert.match(await page.locator('#preview').textContent(),/ATが20以上/);
+  assert.equal(await input(t+'.query.timing.mode').inputValue(),'each');assert.equal(await input(p+'.triggerTiming').inputValue(),'afterAttacked');
+  await input(t+'.basis').selectOption('absolute');assert.equal(await effect.locator('.origin').count(),0);
+  await capture('search-target-mobile',effect);
+  await page.locator('[data-tab="basic"]').tap();assert.equal(await input('card.deckLimit').inputValue(),'2');
+}
+function assertCompactForms(card) {
+  assert.deepEqual(card.initialPlacementForbidden,[0,3,6]);assert.equal(card.deckLimit,2);
+  const e=card.skills.rear.effects[0];assert.equal(e.triggerTiming,'afterAttacked');assert.equal(e.customTriggerTiming,'味方が倒れた直後');assert.equal(e.target.mode,'search');assert.equal(e.target.query.timing.mode,'each');
+}
+module.exports={editEffects,assertEffects,editStatusEffects,assertStatusEffects,editTargeting,assertTargeting,editCompactForms,assertCompactForms};

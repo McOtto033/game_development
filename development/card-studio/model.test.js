@@ -57,11 +57,61 @@ test('新効果の専用パラメーターは再利用・検証され、不明ID
   e.params.layers='two';assert.throws(()=>M.validateLibrary(lib),/型/);
   e.params.layers=2;e.typeId='not-defined';assert.throws(()=>M.validateLibrary(lib),/未登録/);
 });
-test('不正JSON・危険キー・重複・3効果・危険画像を拒否する',()=>{
+test('不正JSON・危険キー・重複・前衛3効果・危険画像を拒否する',()=>{
   assert.throws(()=>M.validateLibrary(JSON.parse('{"__proto__":{}}')),/キー/);
   const lib=library();lib.cards.push(M.clone(lib.cards[0]));assert.throws(()=>M.validateLibrary(lib),/重複/);
   lib.cards.pop();lib.cards[0].card.skills.front.effects.push(M.effect(),M.effect());assert.throws(()=>M.validateLibrary(lib),/最大2/);
   lib.cards[0].card.skills.front.effects.splice(1);lib.cards[0].card.artwork='javascript:alert(1)';assert.throws(()=>M.validateLibrary(lib),/イラスト/);
+});
+test('必殺技のみ3効果まで保存でき、他枠は2効果・必殺技4効果を拒否する',()=>{
+  const lib=library(),skills=lib.cards[0].card.skills;
+  skills.ultimate.effects=[M.effect(),M.effect('buff'),M.effect('heal')];
+  M.validateLibrary(lib);assert.equal(M.effectLimit('ultimate'),3);
+  const saved=M.prepareSave(lib,{cards:[]});assert.equal(saved.cards[0].card.skills.ultimate.effects.length,3);
+  skills.ultimate.effects.push(M.effect());assert.throws(()=>M.validateLibrary(lib),/必殺技は最大3/);skills.ultimate.effects.pop();
+  for(const slot of ['front','middle','rear','alpha']) {
+    const old=skills[slot].effects;skills[slot].effects=[M.effect(),M.effect(),M.effect()];
+    assert.throws(()=>M.validateLibrary(lib),/最大2/);skills[slot].effects=old;
+  }
+});
+test('強化・弱体する能力と変化量の参照元を別々に保存・表示する',()=>{
+  const lib=library(),e=lib.cards[0].card.skills.front.effects[0];e.typeId='buff';e.stat='AG';e.amount.value=.5;
+  M.validateLibrary(lib);assert.equal(M.effectText(e),'強化（AG）：AT×0.5');
+  e.typeId='debuff';e.stat='custom';e.customStat='反撃倍率';assert.equal(M.effectText(e),'弱体（反撃倍率）：AT×0.5');
+  e.customStat='';assert.ok(M.warnings(lib.cards[0]).some(s=>s.includes('強化・弱体する項目')));
+  e.stat='invalid';assert.throws(()=>M.validateLibrary(lib),/強化・弱体する項目/);
+});
+test('行動・効果による対象は対象マスやサーチ条件を要求せず、独自条件も保持する',()=>{
+  const lib=library(),d=lib.cards[0],e=d.card.skills.front.effects[0],t=e.target;t.ally=[];t.enemy=[];t.rule='';
+  for(const source of ['attackSource','attackTarget','effectSource','previousEffectTarget','custom']) {
+    t.source=source;t.context='発動契機の攻撃';M.validateLibrary(lib);
+    assert.ok(!M.warnings(d).some(s=>s.includes('対象マス')||s.includes('サーチ条件')));
+    assert.ok(M.targetText(t).length);
+  }
+  t.context='';assert.ok(M.warnings(d).some(s=>s.includes('対象の決め方')));
+  t.source='previousEffectTarget';assert.ok(M.warnings(d).some(s=>s.includes('直前の効果がない')));
+  d.card.skills.front.effects.unshift(M.effect());assert.ok(!M.warnings(d).some(s=>s.includes('直前の効果がない')));
+  t.source='grid';assert.ok(M.warnings(d).some(s=>s.includes('対象マス')));
+  t.source='invalid';assert.throws(()=>M.validateLibrary(lib),/行動・効果から/);
+});
+test('同じ倍率の連続攻撃を1効果として扱い、回数は正の整数に限る',()=>{
+  const lib=library(),e=lib.cards[0].card.skills.front.effects[0];e.amount.value=.25;e.repeatCount=3;
+  M.validateLibrary(lib);assert.equal(M.effectText(e),'攻撃：AT×0.25 / 3回');
+  assert.equal(lib.cards[0].card.skills.front.effects.length,1);
+  e.alternate={condition:'対象が毒',amount:'AT×0.5'};assert.equal(M.effectText(e),'攻撃：AT×0.25（対象が毒：AT×0.5） / 3回');
+  e.typeId='heal';assert.ok(!M.effectText(e).includes('3回'));e.typeId='attack';
+  for(const invalid of [0,-1,1.5,'3',null]){e.repeatCount=invalid;assert.throws(()=>M.validateLibrary(lib),/攻撃回数/);}
+});
+test('追加項目なしの旧データを変更せず読み込み、新項目をJSON受け渡しと仕様出力で保持する',()=>{
+  const old=library(),e=old.cards[0].card.skills.front.effects[0];
+  delete e.stat;delete e.customStat;delete e.repeatCount;delete e.target.source;delete e.target.context;
+  const before=M.clone(old);M.validateLibrary(old);assert.deepEqual(old,before);assert.equal(M.effectText(e),'攻撃：AT×1.0');assert.equal(M.targetSource(e.target),'grid');
+  const next=M.clone(old),n=next.cards[0].card.skills.front.effects[0];
+  Object.assign(n,{stat:'AG',customStat:'',repeatCount:3});Object.assign(n.target,{source:'attackSource',context:'発動契機の攻撃'});
+  const saved=M.prepareSave(next,old),merged=M.mergeLibraries({schemaVersion:1,revision:0,cards:[],definitions:[]},JSON.parse(JSON.stringify(saved)));
+  assert.deepEqual(merged.library.cards[0].card,next.cards[0].card);
+  assert.deepEqual(M.exportCard(merged.library.cards[0]).card,next.cards[0].card);
+  assert.ok(saved.cards[0].history[0].changes.some(c=>c.path.endsWith('effects')));
 });
 test('取込時は同一データを重複させず、ID競合は履歴を維持したコピーを追加する',()=>{
   const base=library();assert.equal(M.mergeLibraries(base,base).library.cards.length,1);

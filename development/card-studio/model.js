@@ -5,6 +5,12 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
   const slots = [['front','前衛'],['middle','中衛'],['rear','後衛'],['ultimate','必殺技'],['alpha','αスキル']];
+  const effectLimit = slot => slot==='ultimate'?3:2;
+  const stats = [['AT','AT'],['AG','AG'],['HP','HP（現在値）'],['maxHP','最大HP'],['armor','装甲'],['custom','その他（自由入力）']];
+  const targetSources = [['grid','マスで指定'],['attackSource','自身を攻撃してきた相手'],['attackTarget','自身が攻撃した相手'],['effectSource','発動契機となった効果の発生元'],['previousEffectTarget','この行動の直前の効果の対象'],['custom','その他（自由入力）']];
+  const targetSource = t => t.source??'grid';
+  const statText = e => e.stat==='custom'?(e.customStat||'項目未入力'):stats.find(([key])=>key===e.stat)?.[1]||'';
+  const targetText = t => targetSource(t)==='custom'?(t.context||'対象の決め方を記入'):targetSources.find(([key])=>key===targetSource(t))?.[1]||'';
   const classes = ['鳥類','魚類','爬虫類','甲殻類','菌類','昆虫類','哺乳類','竜類','植物','両生類','無機生命','幻獣','軟体類'];
   const classIcons = Object.fromEntries(classes.map((name,i)=>[name,['🐦','🐟','🦎','🦀','🍄','🐞','🐾','🐉','🌿','🐸','💎','🦄','🐚'][i]]));
   const terrains = [['平地','▱'],['森','♧'],['海','≈'],['高地','△'],['活性巣','✧'],['殻壁','▥']];
@@ -45,7 +51,7 @@
     t.basis=basis;
   }
   function effect(typeId='attack') {
-    return {id:id('fx'),typeId,target:{basis:'absolute',ally:[],enemy:[0,1,2,3,4,5,6,7,8],selection:'search',count:1,rule:'残HPが最も低い対象',tie:'前衛→中衛→後衛、同じ衛では左→中央→右',fallback:''},amount:{mode:'multiplier',reference:'AT',value:1,expression:''},duration:{mode:'instant',turns:2},condition:'',alternate:{condition:'',amount:''},details:'',params:{}};
+    return {id:id('fx'),typeId,stat:'',customStat:'',repeatCount:1,target:{source:'grid',context:'',basis:'absolute',ally:[],enemy:[0,1,2,3,4,5,6,7,8],selection:'search',count:1,rule:'残HPが最も低い対象',tie:'前衛→中衛→後衛、同じ衛では左→中央→右',fallback:''},amount:{mode:'multiplier',reference:'AT',value:1,expression:''},duration:{mode:'instant',turns:2},condition:'',alternate:{condition:'',amount:''},details:'',params:{}};
   }
   function blank() {
     const now=new Date().toISOString();
@@ -75,7 +81,8 @@
   }
   function effectText(e,defs=builtins) {
     const def=defs.find(x=>x.id===e.typeId);const amount=amountText(e.amount);
-    return `${def?.name||e.typeId}${amount?'：'+amount:''}${e.alternate.condition?'（'+e.alternate.condition+'：'+e.alternate.amount+'）':''}${e.duration.mode==='always'?' / 常時':e.duration.mode==='turns'?' / '+e.duration.turns+'T':''}`;
+    const stat=['buff','debuff'].includes(e.typeId)?statText(e):'';
+    return `${def?.name||e.typeId}${stat?'（'+stat+'）':''}${amount?'：'+amount:''}${e.alternate.condition?'（'+e.alternate.condition+'：'+e.alternate.amount+'）':''}${e.typeId==='attack'&&(e.repeatCount??1)>1?' / '+e.repeatCount+'回':''}${e.duration.mode==='always'?' / 常時':e.duration.mode==='turns'?' / '+e.duration.turns+'T':''}`;
   }
   function noUnsafeKeys(value,depth=0) {
     if(depth>40)throw Error('JSONの入れ子が深すぎます。');
@@ -117,11 +124,15 @@
       }
       check(object(c.skills),'行動枠がありません。');
       for(const [key,label] of slots) {
-        const s=c.skills[key];check(object(s)&&typeof s.enabled==='boolean'&&['name','trigger','condition'].every(k=>str(s[k]))&&integer(s.turns)&&s.turns>0&&Array.isArray(s.effects)&&s.effects.length<=2,`${label}は最大2効果の規定形式にしてください。`);
+        const s=c.skills[key];check(object(s)&&typeof s.enabled==='boolean'&&['name','trigger','condition'].every(k=>str(s[k]))&&integer(s.turns)&&s.turns>0&&Array.isArray(s.effects)&&s.effects.length<=effectLimit(key),`${label}は最大${effectLimit(key)}効果の規定形式にしてください。`);
         for(const e of s.effects) {
           check(object(e)&&str(e.id)&&defs.some(x=>x.id===e.typeId)&&str(e.condition)&&str(e.details),`${label}に未登録の効果種類、または不正な効果があります。`);
           const t=e.target,a=e.amount,u=e.duration;
+          check(e.stat===undefined||e.stat===''||stats.some(([key])=>key===e.stat),'強化・弱体する項目が不正です。');
+          check(e.customStat===undefined||str(e.customStat),'強化・弱体する独自項目は文字で入力してください。');
+          check(e.repeatCount===undefined||(integer(e.repeatCount)&&e.repeatCount>0),'攻撃回数は1以上の整数で入力してください。');
           check(object(t)&&['absolute','relative'].includes(t.basis)&&['all','search'].includes(t.selection)&&integer(t.count)&&t.count>0&&['rule','tie','fallback'].every(k=>str(t[k])),`${label}の対象条件を確認してください。`);
+          check(targetSources.some(([key])=>key===targetSource(t))&&(t.context===undefined||str(t.context)),'行動・効果からの対象指定が不正です。');
           for(const side of ['ally','enemy'])check(Array.isArray(t[side])&&t[side].every(v=>integer(v)&&v<9)&&unique(t[side]),'対象マスは0〜8の重複しない番号で指定してください。');
           check(t.allyOffsets===undefined||(Array.isArray(t.allyOffsets)&&t.allyOffsets.length<=25&&t.allyOffsets.every(p=>Array.isArray(p)&&p.length===2&&p.every(n=>Number.isInteger(n)&&Math.abs(n)<=2))&&unique(t.allyOffsets.map(p=>p.join(',')))),'相対対象の座標が不正です。');
           check(object(a)&&['none','fixed','multiplier','percent','expression'].includes(a.mode)&&num(a.value)&&str(a.reference)&&str(a.expression),'効果量の形式が不正です。');
@@ -147,8 +158,12 @@
       if(!s.name.trim())out.push(`${label}の固有名を記入する`);
       if(!s.effects.length)out.push(`${label}の効果を追加する`);
       for(const e of s.effects) {
-        if(!targetCells(e.target,'ally',key).length&&!e.target.enemy.length)out.push(`${label}の対象マスを選ぶ`);
-        if(e.target.selection==='search'&&!e.target.rule.trim())out.push(`${label}のサーチ条件を記入する`);
+        if(targetSource(e.target)==='grid') {
+          if(!targetCells(e.target,'ally',key).length&&!e.target.enemy.length)out.push(`${label}の対象マスを選ぶ`);
+          if(e.target.selection==='search'&&!e.target.rule.trim())out.push(`${label}のサーチ条件を記入する`);
+        } else if(targetSource(e.target)==='custom'&&!e.target.context?.trim())out.push(`${label}の対象の決め方を記入する`);
+        if(targetSource(e.target)==='previousEffectTarget'&&s.effects.indexOf(e)===0)out.push(`${label}の先頭の効果には、直前の効果がないため対象を変更する`);
+        if(['buff','debuff'].includes(e.typeId)&&(!e.stat||(e.stat==='custom'&&!e.customStat?.trim())))out.push(`${label}の強化・弱体する項目を指定する`);
         if(e.alternate.condition&&!e.alternate.amount)out.push(`${label}の条件成立時の効果量を記入する`);
         if(e.amount.mode==='expression'&&!e.amount.expression)out.push(`${label}の効果量を記入する`);
       }
@@ -195,5 +210,5 @@
     validateLibrary(merged);return {library:merged,added,copied};
   }
   function exportCard(d) {return {schemaVersion:1,format:'card-design-spec',designId:d.id,gameCardId:d.gameCardId,card:clone(d.card)};}
-  return {slots,classes,classIcons,terrains,builtins,builtinTraits,traitDefinitions,originCell,targetCells,toggleTargetCell,changeTargetBasis,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard};
+  return {slots,effectLimit,stats,statText,targetSources,targetSource,targetText,classes,classIcons,terrains,builtins,builtinTraits,traitDefinitions,originCell,targetCells,toggleTargetCell,changeTargetBasis,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard};
 });

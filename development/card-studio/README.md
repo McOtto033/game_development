@@ -56,11 +56,11 @@ node development/card-studio/server.js
 | 対象 | マス指定は味方・敵の3×3で範囲内すべて／サーチ。行動・効果からの指定は攻撃してきた相手、攻撃した相手、効果の発生元、直前の効果の対象、自由入力から選択 |
 | 自身の位置・相対対象 | 絶対位置にはマークを表示しない。相対位置の `●` は前衛行動なら前衛中央、中衛行動なら中衛中央、後衛行動なら後衛中央。αスキル・必殺技は配置未指定のため中衛中央で仮表示。相対対象はこの位置を基準に描画する |
 | 対象図の塗り分け | 効果範囲は塗りつぶし、サーチ範囲は斜線＋破線。見出し・凡例を併記 |
-| 個別の発動タイミング | 共通設定に従う／戦闘・ターン開始／ターン終了／攻撃前後／被攻撃・被ダメージ後／自由入力。対象の固定・再選択とは別 |
+| 個別の発動タイミング | 共通設定に従う／戦闘・ターン開始／ターン終了／攻撃前後／被攻撃・被ダメージ後／自由入力。攻撃回数・繰り返しとは別 |
 | 効果量 | 能力値×倍率／固定値／割合／自由記述／量なし。倍率入力は0.05刻み。自由記述は式を計算・実行しない |
 | 参照元 | 自身のATは `AT`。他は `対象のAT`、`自身の最大HP` など明記 |
 | 強化・弱体する項目 | AT／AG／HP（現在値）／最大HP／装甲／その他。その他は能力・効果名を自由入力。変化量の参照元とは独立し、例：`強化（AG）：AT×0.5` |
-| 複数回攻撃 | 1回分の量＋1以上の整数回数。例：`攻撃：AT×0.25 / 3回` を1効果として保存。途中で倍率が変わる場合は効果を分ける |
+| 複数回攻撃 | 「攻撃回数（対象固定）」と「この効果の繰り返し」を分離。前者は同じ各対象へ連撃、後者は対象選択からやり直す。全効果をまとめる「行動全体の繰り返し」も指定可 |
 | 状態付与 | 「付与する状態」から選択。毒／回復封じ／防御低下／接触毒／反射殻／装甲（ダメージカット）／反撃／継続回復／麻痺／バリア／その他。「その他」は独自の状態名を入力 |
 | 条件付き効果量 | 一つの効果に通常量と条件成立時の量を併記。二重の実行にしない |
 | 期間 | 即時は表示省略、持続は `2T` 等、常時は `常時`。必殺技の必要ターンは固有欄に `5T` 等 |
@@ -69,7 +69,7 @@ node development/card-studio/server.js
 
 ### 対象条件・選択・再判定の新書式
 
-「範囲内すべて」では範囲の入力だけで対象指定を完結させる。「サーチ」を選ぶと、[効果対象の記述規格](TARGETING.md) に沿って条件、全員またはステータス順のX体を入力できる。候補区分や同値/対象不在は必要時に開く。範囲内すべてへ切り替えるとサーチ条件を適用せず隠し、サーチへ戻すと入力内容を復元する。効果の発動タイミングと対象の判定時点は両方の形式で指定できる。連続攻撃の「対象固定」と「各回の直前に再サーチ」を別の値で保存する。自然言語の条件・選び方も原文で残せる。既存カードは旧書式を保持し、「条件を分けて編集する」から移す。
+「範囲内すべて」では範囲の入力だけで対象指定を完結させる。「サーチ」を選ぶと、[効果対象の記述規格](TARGETING.md) に沿って条件、全員またはステータス順のX体を入力できる。候補区分や同値/対象不在は必要時に開く。範囲内すべてへ切り替えるとサーチ条件を適用せず隠し、サーチへ戻すと入力内容を復元する。発動時点は通常は行動共通欄を使い、効果ごとの例外は折りたたむ。対象固定の攻撃回数と、対象選択からやり直す効果繰り返しを別の値で保存する。[繰り返し規格](REPETITION.md) に三つの入力例と、攻撃＋防御低下のまとめ方を記載した。自然言語の条件・選び方も原文で残せる。既存カードは旧書式を保持し、「条件を分けて編集する」から移す。
 
 ### 行動・効果から対象を決める（旧書式）
 
@@ -141,8 +141,8 @@ library { schemaVersion: 1, revision, cards[], definitions[], traitDefinitions?[
     id, gameCardId, artCredit, status, tags, createdAt, updatedAt
     card { name, artwork, cost, alphaCost, rarity, classification,
            terrains[], traits[], initialPlacementForbidden[], deckLimit, hp, at, ag, skills { front, middle, rear, ultimate, alpha } }
-      skill { enabled, name, trigger, condition, turns, effects[] }
-        effect { id, typeId, stat?, customStat?, statusId?, customStatus?, repeatCount?, target,
+      skill { enabled, name, trigger, condition, turns, repeatCount?, effects[] }
+        effect { id, typeId, stat?, customStat?, statusId?, customStatus?, repeatCount?, repetition?: { count }, target,
                  triggerTiming?, customTriggerTiming?, amount, duration, condition, alternate, details, params }
           target { mode?, source?, context?, query?, basis, ally[], enemy[], allyOffsets?[],
                    selection, count, rule, tie, fallback }
@@ -167,7 +167,7 @@ library { schemaVersion: 1, revision, cards[], definitions[], traitDefinitions?[
 ## 検証
 
 ```powershell
-node --test development/card-studio/server.test.js development/card-studio/model.test.js development/card-studio/targeting.test.js development/card-studio/restrictions.test.js
+node --test development/card-studio/server.test.js development/card-studio/model.test.js development/card-studio/targeting.test.js development/card-studio/restrictions.test.js development/card-studio/repetition.test.js
 node development/card-studio/browser.test.js
 node development/card-studio/static-browser.test.js
 node scripts/verify.js
@@ -196,3 +196,7 @@ iPhone公開対応の追加検証：静的サブパス配信、端末内保存�
 2026-09-18 構築制限・対象UI簡略化：初期配置制限と枚数制限を必須18項目に追加。範囲内すべて／サーチの入力分離、絶対位置の自身マーク非表示、相対位置の表示、効果範囲とサーチ範囲の塗り分け、個別の発動時点を反映。2026-09-19の回答で、枚数制限は1〜n枚制限を合計n枚までと確定し、入力欄・プレビューの説明へ反映した。区分の入力・保存・表示に対応し、本体のデッキ判定は接続時に実装する。詳細は [カード情報規格](CARD_INFORMATION.md)。
 
 検証：専用32/32、標準131/131 PASS。実Edgeで禁止マスの個別／衛一括／解除、枚数区分、保存再読込と別DBへの取り込み、直接範囲／サーチの切替と入力保持、個別の発動時点、絶対／相対の自身マーク、斜線／塗りつぶしを確認。390/320pxの新入力に横はみ出しなし。実機iPhone/Safariは未検証。
+
+2026-09-19 繰り返しUI：対象数／対象固定の攻撃回数／効果の繰り返し／行動全体の繰り返しを分離。三つの攻撃パターンを選ぶ入力例と、括弧でまとめた実行順を追加。サーチの追加条件と個別発動時点は折りたたむ。旧once/eachは同じ意味で表示し、旧eventは既存欄で保持する。仕様は [REPETITION.md](REPETITION.md)。
+
+検証：専用39/39、標準131/131 PASS。実Edgeで三つの攻撃パターン、効果単位と行動全体の繰り返し、前の効果の対象参照・並べ替え、保存再読込・仕様JSON・旧each/eventの保持と回数編集を確認。ローカル版の既存7系統と静的版の回帰確認もPASS。1440/820/390/320pxで横はみ出しなし、スマホ幅の入力と各パターンのプレビュー画像を確認。実機iPhone/Safariは未検証。ゲーム本体の反復実行は接続時の実装対象。

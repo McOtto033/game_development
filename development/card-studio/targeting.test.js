@@ -10,7 +10,7 @@ test('条件・選択・判定時点を独立させ、閾値・極値・各属�
   const text=T.summary(q).join('\n');for(const phrase of ['ATが20以上','最低','同率を含む',' OR ','NOT','待ち伏せ','現在の地形','得意地形','行動順','AGが高い順に2体'])assert.ok(text.includes(phrase),phrase);
 });
 test('同倍率3回攻撃の固定と各回再サーチは別値・別表示で、条件と範囲を変えない',()=>{
-  const e=M.effect();e.amount.value=.25;e.repeatCount=3;const before=M.clone(e.target);e.target.query.side='enemy';
+  const e=M.effect();delete e.repetition;e.amount.value=.25;e.repeatCount=3;const before=M.clone(e.target);e.target.query.side='enemy';
   assert.match(T.summary(e.target.query).join(''),/効果開始時に1回（対象を固定）/);
   e.target.query.timing.mode='each';assert.match(T.summary(e.target.query).join(''),/各回の実行直前（毎回選び直す）/);
   assert.deepEqual(e.target.enemy,before.enemy);assert.deepEqual(e.target.query.conditions,before.query.conditions);assert.equal(e.repeatCount,3);assert.match(M.effectText(e),/AT×0.25 \/ 3回/);

@@ -59,7 +59,7 @@ function gridHtml(target,interactive=false,index=0,skillSlot=slot) {
 }
 function effectsForm(d) {
   const s=d.card.skills[slot],p=`card.skills.${slot}`,limit=M.effectLimit(slot);
-  return `<div class="section-heading"><h2>行動を組み立てる</h2><p>上の効果から順に実行。各効果に対象・量・条件を設定します。</p></div><nav class="slot-tabs" aria-label="行動枠">${M.slots.map(([key,label])=>`<button data-slot="${key}" class="${slot===key?'active':''}" aria-current="${slot===key?'page':'false'}">${label}<small>${d.card.skills[key].enabled?d.card.skills[key].effects.length+'効果':'なし'}</small></button>`).join('')}</nav><section class="panel"><div class="panel-title"><h3>${M.slots.find(x=>x[0]===slot)[1]}</h3><label class="switch"><input type="checkbox" data-bind="${p}.enabled" ${s.enabled?'checked':''}> この枠を使う</label></div>${s.enabled?`<div class="form-grid">${field('カード固有の行動名',p+'.name',s.name,{placeholder:'このカードだけの名称'})}${slot==='ultimate'?number('発動に必要なターン',p+'.turns',s.turns,'カード上では「5T」などと表示'):''}${field('共通の発動時点',p+'.trigger',s.trigger,{placeholder:'戦闘開始時 / 毎ターン開始時 など'})}${field('共通の発動条件',p+'.condition',s.condition,{placeholder:'HP50%以下 など'})}</div>`:'<p class="muted">カード上には「なし」と表示します。入力済みの内容は保持します。</p>'}</section>${s.enabled?`${s.effects.map((e,i)=>effectForm(e,i)).join('')}<button class="add-effect" data-action="add-effect" ${s.effects.length>=limit?'disabled':''}>＋ 効果を追加 <small>${s.effects.length} / ${limit}</small></button><p class="muted">同じ対象で条件により量だけが変わる場合は、効果内の「条件別の効果量」を使います。</p>`:''}`;
+  return `<div class="section-heading"><h2>行動を組み立てる</h2><p>上の効果から順に実行。各効果に対象・量・条件を設定します。</p></div><nav class="slot-tabs" aria-label="行動枠">${M.slots.map(([key,label])=>`<button data-slot="${key}" class="${slot===key?'active':''}" aria-current="${slot===key?'page':'false'}">${label}<small>${d.card.skills[key].enabled?d.card.skills[key].effects.length+'効果':'なし'}</small></button>`).join('')}</nav><section class="panel"><div class="panel-title"><h3>${M.slots.find(x=>x[0]===slot)[1]}</h3><label class="switch"><input type="checkbox" data-bind="${p}.enabled" ${s.enabled?'checked':''}> この枠を使う</label></div>${s.enabled?`<div class="form-grid">${field('カード固有の行動名',p+'.name',s.name,{placeholder:'このカードだけの名称'})}${slot==='ultimate'?number('発動に必要なターン',p+'.turns',s.turns,'カード上では「5T」などと表示'):''}${field('共通の発動時点',p+'.trigger',s.trigger,{placeholder:'戦闘開始時 / 毎ターン開始時 など'})}${field('共通の発動条件',p+'.condition',s.condition,{placeholder:'HP50%以下 など'})}</div>`:'<p class="muted">カード上には「なし」と表示します。入力済みの内容は保持します。</p>'}</section>${s.enabled?`${executionPlanHtml(s)}<section class="action-repeat-group"><div class="action-repeat-head"><h3>行動全体をひとまとまりにする</h3>${field('行動全体の繰り返し回数',p+'.repeatCount',s.repeatCount??1,{type:'number',min:1,step:1,hint:'下の全効果を上から実行して1セット。次のセットは対象選びからやり直す。'})}</div>${s.effects.map((e,i)=>effectForm(e,i)).join('')}<button class="add-effect" data-action="add-effect" ${s.effects.length>=limit?'disabled':''}>＋ 効果を追加 <small>${s.effects.length} / ${limit}</small></button><p class="muted">同じ対象で条件により量だけが変わる場合は、効果内の「条件別の効果量」を使います。</p></section>`:''}`;
 }
 function conditionForm(c,path,i,depth=0) {
   const button=(action,label,extra='')=>`<button class="quiet" data-action="${action}" data-index="${i}" data-condition-path="${esc(path)}" ${extra}>${label}</button>`;
@@ -81,13 +81,13 @@ function targetTimingForm(q,p) {
 function queryForm(q,i,p) {
   const k=p+'.target.query';
   const extra=q.side!=='both'||q.self!=='include'||q.life!=='alive';
-  return `<section class="target-query"><h4>サーチ条件</h4><div class="preset-buttons">${[['fixed','低HP1体・固定'],['repeat','低HP1体・毎回'],['all','条件に合う全員']].map(([key,label])=>`<button class="quiet" data-action="query-preset" data-index="${i}" data-preset="${key}">${label}</button>`).join('')}</div>${conditionForm(q.conditions,k+'.conditions',i)}<div class="form-grid">${field('条件に合う候補から',k+'.pick.mode',q.pick.mode,{select:[['all','すべて選ぶ'],['rank','ステータス順にX体'],['custom','その他（自然言語）']]})}${q.pick.mode==='rank'?field('対象数 X',k+'.pick.count',q.pick.count,{type:'number',min:1,step:1})+field('並べ替えるステータス',k+'.pick.stat',q.pick.stat,{select:T.stats})+field('並び順',k+'.pick.direction',q.pick.direction,{select:[['asc','低い順'],['desc','高い順']]})+(q.pick.stat==='custom'?field('並べ替える能力名',k+'.pick.customStat',q.pick.customStat):''):''}${q.pick.mode==='custom'?field('自然言語の選び方',k+'.pick.text',q.pick.text,{area:true,hint:'対象数も含めて記述'}):''}</div><details class="subsection search-extra" data-disclosure="${p}.extra"><summary>追加の絞り込み ${extra?'（設定あり）':''}</summary><div class="form-grid">${field('対象の陣営',k+'.side',q.side,{select:T.sides})}${field('自身の扱い',k+'.self',q.self,{select:[['include','自身も含める'],['exclude','自身を除く'],['only','自身のみ']]})}${field('対象の生存状態',k+'.life',q.life,{select:[['alive','生存中'],['fallen','戦闘不能'],['any','問わない']]})}</div></details><details class="subsection search-ties" data-disclosure="${p}.ties"><summary>同値・対象なし時 ${q.pick.ties!=='position'||q.absence.mode!=='skip'?'（設定あり）':''}</summary>${q.pick.mode!=='all'?field('同じ値の場合',k+'.pick.ties',q.pick.ties,{select:[['position','位置順でX体に絞る'],['include','境界の同値を全員含む'],['custom','優先順を指定する']],hint:'位置順：前→中→後、左→中央→右、両陣営同位置は味方→敵'})+(q.pick.ties==='custom'?field('同値時の優先順',k+'.pick.tieText',q.pick.tieText):''):''}${field('対象なし／無効時',k+'.absence.mode',q.absence.mode,{select:[['skip','その回は不発（補充しない）'],['stop','この効果の残り回数を打ち切る'],['custom','自然言語で指定する']]})}${q.absence.mode==='custom'?field('対象なし／無効時の指定',k+'.absence.text',q.absence.text,{area:true}):''}</details></section>`;
+  return `<section class="target-query"><h4>サーチ条件</h4><div class="form-grid">${field('選び方',k+'.pick.mode',q.pick.mode,{select:[['all','すべて選ぶ'],['rank','ステータス順にX体'],['custom','その他（自然言語）']]})}${q.pick.mode==='rank'?field('選ぶ対象数',k+'.pick.count',q.pick.count,{type:'number',min:1,step:1})+field('サーチする値',k+'.pick.stat',q.pick.stat,{select:T.stats})+field('並び順',k+'.pick.direction',q.pick.direction,{select:[['asc','低い順'],['desc','高い順']]})+(q.pick.stat==='custom'?field('並べ替える能力名',k+'.pick.customStat',q.pick.customStat):''):''}${q.pick.mode==='custom'?field('自然言語の選び方',k+'.pick.text',q.pick.text,{area:true,hint:'対象数も含めて記述'}):''}</div><details class="subsection search-conditions" data-disclosure="${p}.conditions"><summary>絞り込み条件（${q.conditions.items.length?'設定あり':'任意'}）</summary>${conditionForm(q.conditions,k+'.conditions',i)}</details><details class="subsection search-extra" data-disclosure="${p}.extra"><summary>追加の絞り込み ${extra?'（設定あり）':''}</summary><div class="form-grid">${field('対象の陣営',k+'.side',q.side,{select:T.sides})}${field('自身の扱い',k+'.self',q.self,{select:[['include','自身も含める'],['exclude','自身を除く'],['only','自身のみ']]})}${field('対象の生存状態',k+'.life',q.life,{select:[['alive','生存中'],['fallen','戦闘不能'],['any','問わない']]})}</div></details><details class="subsection search-ties" data-disclosure="${p}.ties"><summary>同値・対象なし時 ${q.pick.ties!=='position'||q.absence.mode!=='skip'?'（設定あり）':''}</summary>${q.pick.mode!=='all'?field('同じ値の場合',k+'.pick.ties',q.pick.ties,{select:[['position','位置順でX体に絞る'],['include','境界の同値を全員含む'],['custom','優先順を指定する']],hint:'位置順：前→中→後、左→中央→右、両陣営同位置は味方→敵'})+(q.pick.ties==='custom'?field('同値時の優先順',k+'.pick.tieText',q.pick.tieText):''):''}${field('対象なし／無効時',k+'.absence.mode',q.absence.mode,{select:[['skip','その回は不発（補充しない）'],['stop','この効果の残り回数を打ち切る'],['custom','自然言語で指定する']]})}${q.absence.mode==='custom'?field('対象なし／無効時の指定',k+'.absence.text',q.absence.text,{area:true}):''}</details></section>`;
 }
 function targetForm(e,i,p) {
   const t=e.target;
   if(!t.query)return `<div class="legacy-target"><p class="muted">従来の記述を保持しています。</p><button data-action="structure-target" data-index="${i}">条件を分けて編集する</button></div>`+legacyTargetForm(e,i,p);
   const source=M.targetSource(t),search=T.mode(t)==='search';
-  return `<div class="form-grid target-mode-fields">${field('対象の指定',p+'.target.mode',T.mode(t),{select:[['area','範囲内すべて'],['search','サーチ（条件で選ぶ）']]})}${field('対象を取る場所',p+'.target.source',source,{select:M.targetSources})}</div>`+(source==='grid'?`<div class="target-editor"><div><h4>${search?'サーチ範囲':'効果範囲'}</h4>${gridHtml(t,true,i)}<p class="range-legend">${search?'▧ 斜線＝サーチ候補のマス':'■ 塗りつぶし＝効果を受けるマス'}${t.basis==='relative'?' / ●＝自身':''}</p><div class="preset-buttons">${[['enemyAll','敵全体'],['enemyFront','敵前衛'],['allyFront','味方前衛'],['allyAll','味方全体'],['self','自身'],['clear','クリア']].map(([key,label])=>`<button class="quiet" data-action="target-preset" data-index="${i}" data-preset="${key}">${label}</button>`).join('')}</div></div>${field('範囲の基準',p+'.target.basis',t.basis,{select:[['absolute','絶対位置'],['relative','自身を基準にした相対位置']]})}</div>`:field(source==='custom'?'参照元の内容':'参照する行動・効果（任意）',p+'.target.context',t.context||''))+(search?queryForm(t.query,i,p):'<p class="muted direct-target-note">指定した範囲の全員に効果を与えます。</p>')+targetTimingForm(t.query,p);
+  return `<div class="form-grid target-mode-fields">${field('対象の指定',p+'.target.mode',T.mode(t),{select:[['area','範囲内すべて'],['search','サーチ（条件で選ぶ）']]})}${field('対象を取る場所',p+'.target.source',source,{select:M.targetSources})}</div>`+(source==='grid'?`<div class="target-editor"><div><h4>${search?'サーチ範囲':'効果範囲'}</h4>${gridHtml(t,true,i)}<p class="range-legend">${search?'▧ 斜線＝サーチ候補のマス':'■ 塗りつぶし＝効果を受けるマス'}${t.basis==='relative'?' / ●＝自身':''}</p><div class="preset-buttons">${[['enemyAll','敵全体'],['enemyFront','敵前衛'],['allyFront','味方前衛'],['allyAll','味方全体'],['self','自身'],['clear','クリア']].map(([key,label])=>`<button class="quiet" data-action="target-preset" data-index="${i}" data-preset="${key}">${label}</button>`).join('')}</div></div>${field('範囲の基準',p+'.target.basis',t.basis,{select:[['absolute','絶対位置'],['relative','自身を基準にした相対位置']]})}</div>`:field(source==='custom'?'参照元の内容':'参照する行動・効果（任意）',p+'.target.context',t.context||''))+(search?queryForm(t.query,i,p):'<p class="muted direct-target-note">指定した範囲の全員に効果を与えます。</p>');
 }
 
 function legacyTargetForm(e,i,p) {
@@ -107,6 +107,24 @@ function legacyTargetForm(e,i,p) {
     (t.selection==='search'?number('選ぶ対象数',p+'.target.count',t.count)+field('対象決定条件',p+'.target.rule',t.rule,{placeholder:'残HPが最も低い対象'}):'')+'</div></div>'+
     (t.selection==='search'?'<details class="subsection"><summary>同値時・候補なし時の規則</summary>'+field('同値時の優先順',p+'.target.tie',t.tie)+field('候補がいない場合',p+'.target.fallback',t.fallback,{placeholder:'空欄＝効果を実行しない。代替対象があれば明記'})+'</details>':'');
 }
+function executionForm(e,i,p) {
+  const x=M.execution(e);
+  if(x.event)return `<div class="legacy-execution"><p>イベントごとの対象判定を保持しています。</p>${targetTimingForm(e.target.query,p)}</div>`;
+  return `<section class="effect-repetition"><h4>この効果の繰り返し</h4>${field('繰り返し回数',p+'.repetition.count',x.repeat,{type:'number',min:1,step:1,hint:'1＝繰り返しなし。毎回、対象選びからやり直す。'})}<p class="execution-note">${esc(effectExecutionNote(e))}</p>${e.typeId==='attack'&&e.target.query?`<details class="execution-examples" data-disclosure="${p}.examples"><summary>3つの攻撃パターンから入力</summary><div class="preset-buttons">${[['three','残HP上位3体に1回ずつ'],['rescan','残HP最大1体を毎回選び、3回'],['fixed','残HP最大1体に3連撃']].map(([key,label])=>`<button class="quiet" data-action="execution-preset" data-index="${i}" data-preset="${key}">${label}</button>`).join('')}</div><p class="muted">範囲・追加条件・効果量はそのまま。サーチの並び順と人数、攻撃回数、効果の繰り返しを設定します。</p></details>`:''}</section>`;
+}
+function effectExecutionNote(e) {
+  const x=M.execution(e),source=M.targetSource(e.target);
+  const select=source==='previousEffectTarget'?'前の効果の対象を参照':source!=='grid'?'参照元から対象を選ぶ':T.mode(e.target)==='search'?'サーチ':'範囲の対象を選ぶ';
+  return x.event?'既存のイベント設定で対象を判定':`［${select} → ${e.typeId==='attack'?'選んだ各対象に'+x.hits+'回攻撃':'効果を適用'}］×${x.repeat}${x.repeat>1?'（毎回選び直す）':'（対象固定）'}`;
+}
+function effectTimingForm(e,p) {
+  const configured=e.triggerTiming&&e.triggerTiming!=='inherit';
+  return `<details class="subsection effect-timing" data-disclosure="${p}.timing" ${configured?'open':''}><summary>この効果だけ発動時点を変える${configured?'（設定あり）':''}</summary>${field('この効果の発動タイミング',p+'.triggerTiming',e.triggerTiming||'inherit',{select:M.effectTimings})}${e.triggerTiming==='custom'?field('独自の発動タイミング',p+'.customTriggerTiming',e.customTriggerTiming||'',{placeholder:'どの行動・効果を契機に発動するか'}):''}<p class="muted">通常は行動の発動時に上から順に実行します。攻撃回数や繰り返しとは別の設定です。</p></details>`;
+}
+function executionPlanHtml(s,preview=false) {
+  return `<div class="execution-plan ${preview?'preview-plan':''}"><small>実行順</small><p>${esc(M.executionText(s,defs()))}</p></div>`;
+}
+
 function effectForm(e,i) {
   const p='card.skills.'+slot+'.effects.'+i,def=defs().find(x=>x.id===e.typeId),length=current().card.skills[slot].effects.length;
   return '<section class="panel effect-editor" data-effect-index="'+i+'"><div class="panel-title"><h3><span class="step-number">'+(i+1)+'</span> '+esc(def.name)+'</h3><div class="effect-actions">'+
@@ -116,12 +134,13 @@ function effectForm(e,i) {
     (['buff','debuff'].includes(e.typeId)?'<div class="form-grid modifier-fields">'+field(e.typeId==='buff'?'強化する項目':'弱体する項目',p+'.stat',e.stat||'',{select:[['','選択してください'],...M.stats],hint:'量の参照元とは別に、実際に変化する能力・効果を指定'})+(e.stat==='custom'?field('能力・効果名',p+'.customStat',e.customStat||'',{placeholder:'例：反撃倍率'}):'')+'</div>':'')+
     (e.typeId==='status'?'<div class="form-grid modifier-fields status-fields">'+field('付与する状態',p+'.statusId',e.statusId||'',{select:[['','選択してください'],...M.statuses],hint:'効果量と持続期間は下の欄で設定'})+(e.statusId==='custom'?field('独自の状態名',p+'.customStatus',e.customStatus||'',{placeholder:'付与する状態の名前'}):'')+'</div>':'')+
     targetForm(e,i,p)+
-    '<div class="effect-timing">'+field('この効果の発動タイミング',p+'.triggerTiming',e.triggerTiming||'inherit',{select:M.effectTimings})+(e.triggerTiming==='custom'?field('独自の発動タイミング',p+'.customTriggerTiming',e.customTriggerTiming||'',{placeholder:'どの行動・効果を契機に発動するか'}):'')+'</div>'+
+    effectTimingForm(e,p)+
     '<div class="form-grid effect-amount">'+field(e.typeId==='attack'?'1回分の効果量の書き方':'効果量の書き方',p+'.amount.mode',e.amount.mode,{select:[['multiplier','能力値 × 倍率'],['fixed','固定値'],['percent','能力値 × 割合（%）'],['expression','自由記述の式'],['none','効果量なし']]})+
     (e.amount.mode==='expression'?field('式・効果量',p+'.amount.expression',e.amount.expression,{placeholder:'対象のAT×0.5 + 10'}):e.amount.mode!=='none'?field(e.amount.mode==='multiplier'?'倍率':e.amount.mode==='percent'?'割合（%）':'固定値',p+'.amount.value',e.amount.value,{type:'number',min:0,step:e.amount.mode==='multiplier'?.05:'any'}):'')+
     (['multiplier','percent'].includes(e.amount.mode)?field('参照元',p+'.amount.reference',e.amount.reference,{placeholder:'AT / 対象のAT / 自身の最大HP',hint:'自身のATだけ「AT」と略記'}):'')+
-    (e.typeId==='attack'?field('攻撃回数',p+'.repeatCount',e.repeatCount??1,{type:'number',min:1,step:1,hint:'各回は同じ倍率。途中で倍率が変わる攻撃は別の効果に分けます。'}):'')+
+    (e.typeId==='attack'?field(M.execution(e).event?'攻撃回数（旧イベント設定）':'攻撃回数（対象固定）',p+'.repeatCount',M.execution(e).hits,{type:'number',min:1,step:1,hint:'選んだ各対象に、この回数攻撃。途中で別の対象を探しません。'}):'')+
     field('期間',p+'.duration.mode',e.duration.mode,{select:[['instant','即時（表示なし）'],['turns','持続する'],['always','常時']]})+(e.duration.mode==='turns'?number('持続ターン数',p+'.duration.turns',e.duration.turns):'')+'</div>'+
+    executionForm(e,i,p)+
     field('この効果だけの条件',p+'.condition',e.condition,{placeholder:'対象が毒状態の場合 など'})+
     '<details class="subsection" '+(e.alternate.condition?'open':'')+'><summary>条件別の効果量</summary><div class="form-grid">'+field('量が変わる条件',p+'.alternate.condition',e.alternate.condition,{placeholder:'対象が毒'})+field('条件成立時の量',p+'.alternate.amount',e.alternate.amount,{placeholder:'AT×1.5'})+'</div></details>'+
     (def.parameters.length?'<div class="form-grid custom-params">'+def.parameters.map(param=>field(param.label,p+'.params.'+param.key,e.params[param.key]??'',{type:param.type==='number'?'number':'text',step:'any'})).join('')+'</div>':'')+
@@ -130,7 +149,15 @@ function effectForm(e,i) {
 function targetPreview(t,i,key) {
   return M.targetSource(t)==='grid'?gridHtml(t,false,i,key):'<div class="target-reference"><span aria-hidden="true">↪</span><small>行動・効果から指定</small></div>';
 }
-function targetDescription(t) {
+function targetDescription(t,e) {
+  if(e&&!M.execution(e).event&&t.query){
+    const q=T.effective(t),source=M.targetSource(t),lines=[];
+    if(source!=='grid'){lines.push('対象：'+M.targetText(t));if(t.context)lines.push('参照：'+t.context);if(source==='previousEffectTarget')lines.push('今回の行動セットで、前の効果が対象にした全員（重複なし）');}
+    else if(T.mode(t)==='area')lines.push('範囲内すべて');
+    if(T.mode(t)==='search'){const all=T.summary(q);lines.push(...all.filter(x=>x.startsWith('選択：')).map(x=>x.replace('選択：','サーチ：')));if(q.conditions.items.length)lines.push('条件：'+T.conditionText(q.conditions));if(q.side!=='both'||q.self!=='include'||q.life!=='alive')lines.push(all[0]);if(q.pick.ties!=='position')lines.push(...all.filter(x=>x.startsWith('同値：')));if(q.absence.mode!=='skip')lines.push(...all.filter(x=>x.startsWith('対象なし')));}
+    if(t.basis==='relative'&&source==='grid')lines.push('相対範囲（●が自身）');
+    return lines.map(x=>'<p>'+esc(x)+'</p>').join('');
+  }
   if(t.query&&T.mode(t)==='area')return (M.targetSource(t)!=='grid'?'<p>対象：'+esc(M.targetText(t))+'</p>'+(t.context&&M.targetSource(t)!=='custom'?'<p>参照：'+esc(t.context)+'</p>':''):'<p>範囲内すべて</p>')+T.summary(T.effective(t)).filter(x=>x.startsWith('再判定：')).map(x=>'<p>'+esc(x)+'</p>').join('')+(t.basis==='relative'&&M.targetSource(t)==='grid'?'<p class="muted">相対範囲（●が自身）</p>':'');
   if(t.query)return (M.targetSource(t)!=='grid'?'<p>対象：'+esc(M.targetText(t))+'</p>'+(t.context&&M.targetSource(t)!=='custom'?'<p>参照：'+esc(t.context)+'</p>':''):'')+T.summary(t.query).map(text=>'<p>'+esc(text)+'</p>').join('')+(t.basis==='relative'&&M.targetSource(t)==='grid'?'<p class="muted">相対範囲（●が自身）</p>':'');
   if(M.targetSource(t)==='grid')return (t.selection==='search'?'<p>'+esc(t.rule)+'・'+t.count+'体</p>'+(t.tie?'<p class="muted">同値：'+esc(t.tie)+'</p>':'')+(t.fallback?'<p>候補なし：'+esc(t.fallback)+'</p>':''):'')+(t.basis==='relative'?'<p class="muted">相対範囲（●が自身）</p>':'');
@@ -147,7 +174,7 @@ function tip(label,description,display=label) {return `<button class="term" data
 function renderPreview() {
   const d=current();if(!d)return;const c=d.card,warnings=M.warnings(d);
   $('#preview').innerHTML=`<div class="section-label">LIVE PREVIEW <span>カード詳細</span></div><article class="preview-card"><div class="preview-art ${c.artwork?'has-art':''}">${c.artwork?`<img src="${esc(c.artwork)}" alt="${esc(c.name)}のイラスト">`:'<span>✧</span>'}<div class="cost-tokens"><b>${c.cost}</b><b>α${c.alphaCost}</b></div><span class="rarity r-${c.rarity}">${c.rarity}</span></div><div class="preview-core"><h2>${esc(c.name||'名称未設定')}</h2><div class="preview-meta">${tip(c.classification,`${c.classification}。カードが属する生物・存在のまとまり。分類そのものに共通効果はありません。`,M.classIcons[c.classification]||'◈')}<div class="terrain-icons">${c.terrains.map(name=>tip('得意地形',`得意地形はカードが得意とする地形です。このカードの得意地形：${c.terrains.join('・')}。各地形での具体的な補正はゲームの地形定義に従います。`,M.terrains.find(x=>x[0]===name)?.[1]||'◇')).join('')}</div></div><div class="preview-stats">${[['HP',c.hp],['AT',c.at],['AG',c.ag]].map(([k,n])=>`<div><small>${k}</small><b>${n}</b></div>`).join('')}</div>${restrictionsPreview(c)}<div class="preview-traits"><small>特性</small><div>${c.traits.length?c.traits.map(t=>tip(t.name,[t.description||'説明未入力',t.effectAmount?'効果量：'+t.effectAmount:''].filter(Boolean).join('\n'),t.name+t.value+(t.effectAmount?' / '+t.effectAmount:''))).join(''):'なし'}</div></div>${[['alpha','αスキル'],['ultimate','必殺技'],['front','前衛行動'],['middle','中衛行動'],['rear','後衛行動']].map(([key,label])=>{
-    const s=c.skills[key];return `<section class="preview-skill"><div class="preview-skill-title"><small>${label}</small>${s.enabled&&key==='ultimate'?tip('必殺技の必要ターン',`発動に必要なターン：${s.turns}T。効果の持続期間とは別の値です。`,s.turns+'T'):''}</div>${s.enabled?`<h3>${esc(s.name||'名称未設定')}</h3>${s.trigger||s.condition?`<p class="condition">${esc([s.trigger,s.condition].filter(Boolean).join(' / '))}</p>`:''}${s.effects.map((e,i)=>{const def=defs().find(f=>f.id===e.typeId);return `<div class="preview-effect">${targetPreview(e.target,i,key)}<div class="effect-description"><b>${tip(def.name,def.description,def.icon)} ${esc(M.effectText(e,defs()))}</b>${targetDescription(e.target)}${e.triggerTiming&&e.triggerTiming!=='inherit'?`<p class="condition">発動：${esc(M.effectTimingText(e))}</p>`:''}${e.condition?`<p class="condition">条件：${esc(e.condition)}</p>`:''}${Object.keys(e.params).length?`<p>${def.parameters.filter(p=>e.params[p.key]!==undefined&&e.params[p.key]!=='').map(p=>`${esc(p.label)}：${esc(e.params[p.key])}`).join(' / ')}</p>`:''}${e.details?`<p class="prewrap">${esc(e.details)}</p>`:''}</div></div>`;}).join('')}`:'<p class="none">なし</p>'}</section>`;
+    const s=c.skills[key];return `<section class="preview-skill"><div class="preview-skill-title"><small>${label}</small>${s.enabled&&key==='ultimate'?tip('必殺技の必要ターン',`発動に必要なターン：${s.turns}T。効果の持続期間とは別の値です。`,s.turns+'T'):''}</div>${s.enabled?`<h3>${esc(s.name||'名称未設定')}</h3>${s.trigger||s.condition?`<p class="condition">${esc([s.trigger,s.condition].filter(Boolean).join(' / '))}</p>`:''}${executionPlanHtml(s,true)}${s.effects.map((e,i)=>{const def=defs().find(f=>f.id===e.typeId);return `<div class="preview-effect">${targetPreview(e.target,i,key)}<div class="effect-description"><b>${tip(def.name,def.description,def.icon)} ${esc(M.effectText({...e,repeatCount:M.execution(e).hits},defs()))}${e.typeId==='attack'&&M.execution(e).hits===1?' / 1回':''}</b>${targetDescription(e.target,e)}<p class="repeat-caption">${esc(effectExecutionNote(e))}</p>${e.triggerTiming&&e.triggerTiming!=='inherit'?`<p class="condition">発動：${esc(M.effectTimingText(e))}</p>`:''}${e.condition?`<p class="condition">条件：${esc(e.condition)}</p>`:''}${Object.keys(e.params).length?`<p>${def.parameters.filter(p=>e.params[p.key]!==undefined&&e.params[p.key]!=='').map(p=>`${esc(p.label)}：${esc(e.params[p.key])}`).join(' / ')}</p>`:''}${e.details?`<p class="prewrap">${esc(e.details)}</p>`:''}</div></div>`;}).join('')}`:'<p class="none">なし</p>'}</section>`;
   }).join('')}</div></article><details class="readiness" ${warnings.length?'':'open'}><summary>${warnings.length?`○ 作りかけの項目 ${warnings.length}`:'✓ 基本項目を入力済み'}</summary>${warnings.length?`<ul>${warnings.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p>下書きのまま保存できます。</p>`:'<p>効果の実装・バランス検証は採用時に確認します。</p>'}</details><p class="preview-caption">表示規格の確認用プレビュー<br>設計内容のゲームへの登録は未実施</p>`;
 }
 function showDialog(html) {$('#dialog-body').innerHTML=html;if(!$('#dialog').open)$('#dialog').showModal();}
@@ -169,12 +196,15 @@ async function save() {
   } catch(e) {toast(e.message,true);$('#save-state').textContent='● 保存できませんでした';}
   finally {saving=false;$('.workspace').inert=false;$('.top-actions').inert=false;$('#save').disabled=!dirty;}
 }
+function updateExecutionPlan(){const s=current()?.card.skills[slot],node=$('#main .execution-plan p');if(s&&node)node.textContent=M.executionText(s,defs());document.querySelectorAll('.effect-editor').forEach((el,i)=>{const note=el.querySelector('.execution-note');if(note)note.textContent=effectExecutionNote(s.effects[i]);});}
 function setPath(obj,path,value) {const keys=path.split('.');const last=keys.pop();for(const key of keys)obj=obj[key];obj[last]=value;}
 function changeBound(el) {
   const d=current();if(!d)return;
   const path=el.dataset.bind;
   let value=el.type==='checkbox'?el.checked:el.type==='number'?(Number.isFinite(el.valueAsNumber)?el.valueAsNumber:0):el.value;
   if(path==='card.deckLimit')value=value===''?null:Number(value);
+  const repetitionMatch=path.match(/^card\.skills\.([^.]+)\.effects\.(\d+)\.(repeatCount|repetition\.count)$/);
+  if(repetitionMatch){const e=d.card.skills[repetitionMatch[1]].effects[Number(repetitionMatch[2])];if(!M.execution(e).event){M.setExecution(e,{[repetitionMatch[3]==='repeatCount'?'hits':'repeat']:value});markDirty();renderPreview();renderLibrary();updateExecutionPlan();return;}}
   if(path==='tags')value=value.split(/[,、]/).map(x=>x.trim()).filter(Boolean);
   if(path.includes('.query.conditions.')&&path.endsWith('.kind')) {
     const parent=path.slice(0,-5);setPath(d,parent,T.condition(value));markDirty();renderPreview();renderLibrary();return;
@@ -193,6 +223,7 @@ function changeBound(el) {
     if(def){trait.name=def.name;trait.description=def.description;}
   }
   setPath(d,path,value);markDirty();renderPreview();renderLibrary();
+  updateExecutionPlan();
   if(path==='card.name')$('#editor-title').textContent=value||'名称未設定';
 }
 document.addEventListener('input',event=>{
@@ -233,10 +264,10 @@ document.addEventListener('click',event=>{
   if(action==='restriction-rank'){const cells=d.card.initialPlacementForbidden||[],col=Number(button.dataset.rank),rank=[col,col+3,col+6];d.card.initialPlacementForbidden=rank.every(x=>cells.includes(x))?cells.filter(x=>!rank.includes(x)):[...new Set([...cells,...rank])].sort((a,b)=>a-b);}
   if(action==='clear-restrictions')d.card.initialPlacementForbidden=[];
   if(action==='structure-target'){const t=s.effects[i].target;t.query=T.fromLegacy(t);t.mode=T.mode({...t,mode:undefined});}
-  if(action==='query-preset'){
-    const q=s.effects[i].target.query;
-    if(button.dataset.preset==='all')q.pick.mode='all';
-    else {Object.assign(q.pick,{mode:'rank',stat:'hp',direction:'asc',count:1});q.timing.mode=button.dataset.preset==='repeat'?'each':'once';}
+  if(action==='execution-preset'){
+    const e=s.effects[i],q=e.target.query,key=button.dataset.preset;e.target.mode='search';
+    Object.assign(q.pick,{mode:'rank',stat:'hp',direction:'desc',count:key==='three'?3:1,ties:'position'});
+    M.setExecution(e,{hits:key==='fixed'?3:1,repeat:key==='rescan'?3:1});
   }
   if(action==='add-condition'||action==='remove-condition'){
     const path=button.dataset.conditionPath,parts=path.split('.');let target=d;for(const part of parts)target=target[part];

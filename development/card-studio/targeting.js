@@ -51,7 +51,8 @@
   }
   function summary(q){
     const p=q.pick,scope=label(sides,q.side)+(q.self==='exclude'?'・自身を除く':q.self==='only'?'・自身のみ':'')+' / '+label([['alive','生存中'],['fallen','戦闘不能'],['any','生存状態を問わない']],q.life);
-    const pick=p.mode==='all'?'条件に合う全員':p.mode==='rank'?statName(p)+'が'+(p.direction==='asc'?'低い':'高い')+'順に'+p.count+'体':(p.text||'対象数を含めて選び方を記入');
+    const rank=p.stat==='hp'?(p.count===1?'残HP'+(p.direction==='asc'?'最小':'最大')+'の1体':'残HPが'+(p.direction==='asc'?'少ない':'多い')+'順に'+p.count+'体'):statName(p)+'が'+(p.direction==='asc'?'低い':'高い')+'順に'+p.count+'体';
+    const pick=p.mode==='all'?'条件に合う全員':p.mode==='rank'?rank:(p.text||'対象数を含めて選び方を記入');
     const out=['候補：'+scope,'条件：'+conditionText(q.conditions),'選択：'+pick,'再判定：'+label(timings,q.timing.mode)+(q.timing.mode==='event'?' / '+(q.timing.event==='custom'?q.timing.text:label(events,q.timing.event)):'')];
     if(p.mode!=='all')out.push('同値：'+(p.ties==='include'?'境界の同値を全員含む（X体を超える場合あり）':p.ties==='custom'?(p.tieText||'優先順を記入'):'前衛→中衛→後衛、同じ衛では左→中央→右。両陣営同位置は味方→敵'));
     out.push('対象なし／無効：'+(q.absence.mode==='skip'?'その回は不発・別対象で補充しない':q.absence.mode==='stop'?'この効果の残り回数を打ち切る':q.absence.text||'扱いを記入'));

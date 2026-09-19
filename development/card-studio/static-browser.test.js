@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs/promises');
 const http=require('node:http');
 const path=require('node:path');
+const {checkRepetition}=require('./repetition-browser-checks');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const {editEffects,assertEffects,editStatusEffects,assertStatusEffects,editTargeting,assertTargeting,editCompactForms,assertCompactForms}=require('./effect-browser-checks');
 const base='/game_development/card-studio/';
@@ -75,6 +76,8 @@ const requests=[];
     await page.locator('[data-slot="ultimate"]').tap();await page.locator('.preview-skill').filter({has:page.locator('h3',{hasText:'三段の検証'})}).screenshot({path:path.join(artifactDir,'ultimate-preview-mobile.png')});
     await page.locator('[data-slot="middle"]').tap();await page.locator('.editor-body').screenshot({path:path.join(artifactDir,'status-mobile.png')});
     await page.locator('[data-slot="rear"]').tap();await page.locator('.target-query').screenshot({path:path.join(artifactDir,'target-query-mobile.png')});
+    const repetition=await checkRepetition(page,artifactDir);assert.deepEqual(errors,[]);
+    await fs.writeFile(path.join(artifactDir,'repetition-results.json'),JSON.stringify(repetition,null,2));
     await fs.writeFile(path.join(artifactDir,'static-results.json'),JSON.stringify({passed:true,checks:['サブパス配信','端末内保存と再読込','タブ競合の保護','前回バックアップ出力','独立端末へのJSON取込','対象マスタップと390px表示','強化弱体する能力の独立指定','行動効果による対象指定','3回攻撃を1効果として保存','必殺技3効果の追加複製並替と上限','付与状態の選択・独自名・検索・切替保持','対象条件の複合・属性・行動順・自然文・全員/順位・固定/再サーチ・旧形式移行','初期配置制限・枚数区分の保存と再読込','直接範囲とサーチの切替・条件保持・発動時点','絶対位置の自身マーク非表示・相対位置の表示・塗り分け','1440/820/390/320px表示','公開先への書込通信なし'],webkitTested:false},null,2));
     console.log('PASS: static subpath, device persistence, conflict, backup, JSON transfer, mobile touch, no remote writes');
   }finally{await browser?.close();await new Promise(r=>server.close(r));}

@@ -6,6 +6,27 @@
   'use strict';
   const slots = [['front','前衛'],['middle','中衛'],['rear','後衛'],['ultimate','必殺技'],['alpha','αスキル']];
   const effectLimit = slot => slot==='ultimate'?3:2;
+  // 1セット = 対象を選ぶ → 同じ対象へ攻撃。効果/行動の繰り返しではセットをやり直す。
+  function execution(e) {
+    const hits=e.typeId==='attack'?(e.repeatCount??1):1;
+    if(e.repetition)return {hits,repeat:e.repetition.count,event:false};
+    const mode=e.target.query?.timing.mode;
+    return {hits:mode==='each'?1:hits,repeat:mode==='each'?hits:1,event:mode==='event'};
+  }
+  function setExecution(e,patch={}) {
+    const x=execution(e);
+    if(x.event)throw Error('イベントごとの対象判定は詳細設定で変更してください。');
+    e.repeatCount=patch.hits??(e.typeId==='attack'?x.hits:(e.repeatCount??1));e.repetition={count:patch.repeat??x.repeat};
+    if(e.target.query)e.target.query.timing.mode='once';
+  }
+  function executionText(s,defs=builtins) {
+    const steps=s.effects.map((e,i)=>{
+      const x=execution(e),name=e.typeId==='status'?statusText(e)||'状態付与':defs.find(d=>d.id===e.typeId)?.name||e.typeId;
+      const body=`${i+1}. ${name}${e.typeId==='attack'?' '+x.hits+'回（対象固定）':''}`;
+      return x.event?body+'〔イベント設定〕':x.repeat>1?`［対象選択 → ${body}］×${x.repeat}`:body;
+    }).join(' → ')||'効果を追加してください';
+    return (s.repeatCount??1)>1?`［${steps}］×${s.repeatCount}（行動全体）`:steps;
+  }
   const effectTimings=[['inherit','行動の発動時（共通設定に従う）'],['battleStart','戦闘開始時'],['turnStart','ターン開始時'],['turnEnd','ターン終了時'],['beforeAttack','自身の攻撃直前'],['afterAttack','自身の攻撃直後'],['afterAttacked','自身が攻撃を受けた直後'],['afterDamaged','自身がダメージを受けた直後'],['custom','その他（自由入力）']];
   const effectTimingText=e=>e.triggerTiming==='custom'?(e.customTriggerTiming||'発動タイミング未入力'):effectTimings.find(([key])=>key===(e.triggerTiming||'inherit'))[1];
   function placementText(c){
@@ -61,7 +82,7 @@
     t.basis=basis;
   }
   function effect(typeId='attack') {
-    return {id:id('fx'),typeId,triggerTiming:'inherit',customTriggerTiming:'',stat:'',customStat:'',repeatCount:1,target:{mode:'area',query:T.create(),source:'grid',context:'',basis:'absolute',ally:[],enemy:[0,1,2,3,4,5,6,7,8],selection:'search',count:1,rule:'残HPが最も低い対象',tie:'前衛→中衛→後衛、同じ衛では左→中央→右',fallback:''},amount:{mode:'multiplier',reference:'AT',value:1,expression:''},duration:{mode:'instant',turns:2},condition:'',alternate:{condition:'',amount:''},details:'',params:{}};
+    return {id:id('fx'),typeId,triggerTiming:'inherit',customTriggerTiming:'',stat:'',customStat:'',repeatCount:1,repetition:{count:1},target:{mode:'area',query:T.create(),source:'grid',context:'',basis:'absolute',ally:[],enemy:[0,1,2,3,4,5,6,7,8],selection:'search',count:1,rule:'残HPが最も低い対象',tie:'前衛→中衛→後衛、同じ衛では左→中央→右',fallback:''},amount:{mode:'multiplier',reference:'AT',value:1,expression:''},duration:{mode:'instant',turns:2},condition:'',alternate:{condition:'',amount:''},details:'',params:{}};
   }
   function blank() {
     const now=new Date().toISOString();
@@ -137,6 +158,7 @@
       check(object(c.skills),'行動枠がありません。');
       for(const [key,label] of slots) {
         const s=c.skills[key];check(object(s)&&typeof s.enabled==='boolean'&&['name','trigger','condition'].every(k=>str(s[k]))&&integer(s.turns)&&s.turns>0&&Array.isArray(s.effects)&&s.effects.length<=effectLimit(key),`${label}は最大${effectLimit(key)}効果の規定形式にしてください。`);
+        check(s.repeatCount===undefined||(Number.isSafeInteger(s.repeatCount)&&s.repeatCount>0),'行動全体の繰り返しは1以上の整数で入力してください。');
         for(const e of s.effects) {
           check(object(e)&&str(e.id)&&defs.some(x=>x.id===e.typeId)&&str(e.condition)&&str(e.details),`${label}に未登録の効果種類、または不正な効果があります。`);
           const t=e.target,a=e.amount,u=e.duration;
@@ -151,6 +173,8 @@
           check(object(t)&&['absolute','relative'].includes(t.basis)&&['all','search'].includes(t.selection)&&integer(t.count)&&t.count>0&&['rule','tie','fallback'].every(k=>str(t[k])),`${label}の対象条件を確認してください。`);
           check(targetSources.some(([key])=>key===targetSource(t))&&(t.context===undefined||str(t.context)),'行動・効果からの対象指定が不正です。');
           if(t.query!==undefined)T.validate(t.query);
+          check(e.repetition===undefined||(object(e.repetition)&&Number.isSafeInteger(e.repetition.count)&&e.repetition.count>0),'効果の繰り返しは1以上の整数で入力してください。');
+          check(!e.repetition||!t.query||t.query.timing.mode==='once','繰り返し書式では対象の旧再判定設定を併用できません。');
           for(const side of ['ally','enemy'])check(Array.isArray(t[side])&&t[side].every(v=>integer(v)&&v<9)&&unique(t[side]),'対象マスは0〜8の重複しない番号で指定してください。');
           check(t.allyOffsets===undefined||(Array.isArray(t.allyOffsets)&&t.allyOffsets.length<=25&&t.allyOffsets.every(p=>Array.isArray(p)&&p.length===2&&p.every(n=>Number.isInteger(n)&&Math.abs(n)<=2))&&unique(t.allyOffsets.map(p=>p.join(',')))),'相対対象の座標が不正です。');
           check(object(a)&&['none','fixed','multiplier','percent','expression'].includes(a.mode)&&num(a.value)&&str(a.reference)&&str(a.expression),'効果量の形式が不正です。');
@@ -232,5 +256,5 @@
     validateLibrary(merged);return {library:merged,added,copied};
   }
   function exportCard(d) {return {schemaVersion:1,format:'card-design-spec',designId:d.id,gameCardId:d.gameCardId,card:{...clone(d.card),initialPlacementForbidden:clone(d.card.initialPlacementForbidden||[]),deckLimit:d.card.deckLimit??null}};}
-  return {slots,effectLimit,effectTimings,effectTimingText,placementText,stats,statText,statuses,statusText,targetSources,targetSource,targetText,classes,classIcons,terrains,builtins,builtinTraits,traitDefinitions,originCell,targetCells,toggleTargetCell,changeTargetBasis,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard};
+  return {slots,effectLimit,execution,setExecution,executionText,effectTimings,effectTimingText,placementText,stats,statText,statuses,statusText,targetSources,targetSource,targetText,classes,classIcons,terrains,builtins,builtinTraits,traitDefinitions,originCell,targetCells,toggleTargetCell,changeTargetBasis,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard};
 });

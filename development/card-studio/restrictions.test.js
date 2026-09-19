@@ -21,7 +21,7 @@ test('全範囲モードは隠したサーチ条件を適用せず、切替で�
   const old={...t};delete old.mode;assert.equal(T.mode(old),'search');old.query=T.create();old.query.pick.mode='all';assert.equal(T.mode(old),'area');
 });
 test('効果の発動タイミングと対象再判定を独立して保存する',()=>{
-  const d=M.template('attack'),e=d.card.skills.front.effects[0];e.triggerTiming='afterAttacked';e.target.query.timing.mode='each';
+  const d=M.template('attack'),e=d.card.skills.front.effects[0];delete e.repetition;e.triggerTiming='afterAttacked';e.target.query.timing.mode='each';
   M.validateLibrary({schemaVersion:1,revision:0,cards:[d],definitions:[]});assert.equal(M.effectTimingText(e),'自身が攻撃を受けた直後');
   e.triggerTiming='custom';e.customTriggerTiming='味方が倒れた直後';assert.equal(M.effectTimingText(e),'味方が倒れた直後');assert.equal(e.target.query.timing.mode,'each');
 });

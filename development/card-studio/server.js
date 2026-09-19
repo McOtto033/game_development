@@ -82,6 +82,7 @@ function validateLibrary(library) {
   }
   validateEntries(library.cards, 'cards');
   validateEntries(library.definitions, 'definitions');
+  try {require('./model').validateIdeas(library.abilityIdeas);}catch(error){throw new ClientError(400,error.message);}
 }
 
 function checkHost(req) {

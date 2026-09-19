@@ -27,6 +27,16 @@ node development/card-studio/server.js
 
 ## 最短の使い方
 
+### 特性・効果・状態は、まず自然言語で貯める
+
+1. ライブラリの「能力案」→「能力案を書く」。カードを決めずに始められる。カードに紐づけるなら、そのカードの「能力案」タブから追加する。
+2. 「能力の説明」だけ入力して保存。名前・具体例・関連先は任意。「保存して次の案」で続けて記録できる。
+3. 案が集まったら「整理用に書き出す」で原文・履歴をまとめたJSONを出し、整理を依頼するときに渡す。
+
+修正前の原文は履歴に残り、検索できる。保存済みの案は保管・復帰できる。基本情報と既存の詳細入力を維持し、細かな形式の追加は実例の整理後に行う。保存形式と後の整理手順は [能力案の収集規格](ABILITY_IDEAS.md)。
+
+### カードの基本情報と既存の詳細入力
+
 1. 「新しいカード」から白紙・攻撃型・支援型を選ぶ。サンプル名・数値は入力例で、採用カードではない。
 2. 「基本情報」で名前、レアリティ、コスト、分類、HP/AT/AG、イラスト、得意地形、特性、初期配置制限・枚数制限を入力する。
 3. 「行動・効果」で前衛・中衛・後衛・必殺技・αスキルを選び、「この枠を使う」を設定する。
@@ -136,7 +146,7 @@ node development/card-studio/server.js
 ## データ構造
 
 ```text
-library { schemaVersion: 1, revision, cards[], definitions[], traitDefinitions?[] }
+library { schemaVersion: 1, revision, cards[], definitions[], traitDefinitions?[], abilityIdeas?[] }
   cards[]
     id, gameCardId, artCredit, status, tags, createdAt, updatedAt
     card { name, artwork, cost, alphaCost, rarity, classification,
@@ -152,6 +162,8 @@ library { schemaVersion: 1, revision, cards[], definitions[], traitDefinitions?[
   definitions[] { id, name, icon, description, parameters[] { key, label, type } }
   traitDefinitions[] { id, name, description }
   card.traits[] { definitionId?, name, value, effectAmount?, description }
+  abilityIdeas[] { id, name, description, examples, cardId, slot, archived,
+                   createdAt, updatedAt, revisions[], sourceIdeaId? }
 ```
 
 カード仕様は `card`、開発情報は同階層の `notes` / `history` などに分離する。フォルダー自体もゲームの実行資産から独立する。既存カードの自動移行と戦闘エンジン用アダプターは未実装。版・記録者・実装参照は、現版では設計メモ／検証条件に記録する。
@@ -167,9 +179,10 @@ library { schemaVersion: 1, revision, cards[], definitions[], traitDefinitions?[
 ## 検証
 
 ```powershell
-node --test development/card-studio/server.test.js development/card-studio/model.test.js development/card-studio/targeting.test.js development/card-studio/restrictions.test.js development/card-studio/repetition.test.js
+node --test development/card-studio/server.test.js development/card-studio/model.test.js development/card-studio/targeting.test.js development/card-studio/restrictions.test.js development/card-studio/repetition.test.js development/card-studio/ability-ideas.test.js
 node development/card-studio/browser.test.js
 node development/card-studio/static-browser.test.js
+node development/card-studio/ability-ideas-browser.test.js
 node scripts/verify.js
 ```
 
@@ -200,3 +213,5 @@ iPhone公開対応の追加検証：静的サブパス配信、端末内保存�
 2026-09-19 繰り返しUI：対象数／対象固定の攻撃回数／効果の繰り返し／行動全体の繰り返しを分離。三つの攻撃パターンを選ぶ入力例と、括弧でまとめた実行順を追加。サーチの追加条件と個別発動時点は折りたたむ。旧once/eachは同じ意味で表示し、旧eventは既存欄で保持する。仕様は [REPETITION.md](REPETITION.md)。
 
 検証：専用39/39、標準131/131 PASS。実Edgeで三つの攻撃パターン、効果単位と行動全体の繰り返し、前の効果の対象参照・並べ替え、保存再読込・仕様JSON・旧each/eventの保持と回数編集を確認。ローカル版の既存7系統と静的版の回帰確認もPASS。1440/820/390/320pxで横はみ出しなし、スマホ幅の入力と各パターンのプレビュー画像を確認。実機iPhone/Safariは未検証。ゲーム本体の反復実行は接続時の実装対象。
+
+2026-09-19 能力案の収集：自然言語の説明だけで独立した案を保存し、関連カード/箇所は任意とした。原文の保存履歴、検索、保管/復帰、連続入力、整理用JSON、DB受渡し時の参照保持を追加。専用46/46、標準131/131 PASS。実Edgeのローカル版・静的版で入力/保存再読込/原文検索/書き出し、静的版で独立端末への移送を確認し、既存ローカル7系統と静的版の回帰もPASS。1440/820/390/320pxで横はみ出しなし、スマホ幅の原文入力・履歴・カード紐づけ画面を目視確認。実機iPhone/Safariは未検証。

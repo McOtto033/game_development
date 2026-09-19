@@ -6,6 +6,9 @@ const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const stateNames={draft:'下書き',testing:'検証中',adopted:'採用',held:'保留',archived:'見送り'};
 let library={schemaVersion:1,revision:0,cards:[],definitions:[]}, baseline=M.clone(library), selected=null, tab='basic', slot='front', dirty=false, ready=false, saving=false, logs={}, storage=null;
+let view='cards',selectedIdea=null;
+const searches={cards:'',ideas:''},welcomeHtml=$('#main').innerHTML;
+const currentIdea=()=>library.abilityIdeas?.find(a=>a.id===selectedIdea);
 const current=()=>library.cards.find(d=>d.id===selected);
 const defs=()=>M.definitions(library);
 const date=v=>new Date(v).toLocaleString('ja-JP');
@@ -19,23 +22,73 @@ function field(label,path,value,{type='text',hint='',placeholder='',step,min,are
 const number=(label,path,v,hint='')=>field(label,path,v,{type:'number',min:0,step:1,hint});
 function toast(message,error=false) {const n=$('#notice');n.textContent=message;n.classList.toggle('error',error);n.hidden=false;}
 function markDirty() {dirty=true;$('#save-state').textContent='● 未保存';$('#save').disabled=!ready||saving;}
+function setView(next) {if(view!==next){searches[view]=$('#search').value;view=next;$('#search').value=searches[view];}}
+function ideaTitle(a){return a.name||a.description.split('\n')[0].slice(0,42)||'新しい能力案';}
+function ideaLocation(a){const d=library.cards.find(d=>d.id===a.cardId);return [a.cardId?(d?.card.name||'関連カード未取込：'+a.cardId):'カード未指定',M.ideaSlots.find(([k])=>k===a.slot)?.[1]].filter(x=>x&&x!=='未指定').join(' / ');}
+function renderIdeaList(){
+  const q=$('#search').value.trim().toLocaleLowerCase(),filter=$('#idea-filter').value,all=library.abilityIdeas||[];
+  const list=all.filter(a=>(filter==='all'||filter==='archived'?filter==='all'||a.archived:!a.archived&&(filter!=='independent'||!a.cardId))&&(!q||JSON.stringify([a.name,a.description,a.examples,a.revisions,ideaLocation(a)]).toLocaleLowerCase().includes(q)));
+  $('#library-count').textContent=all.length;
+  $('#card-list').innerHTML=list.map(a=>`<button class="library-card idea-list-card ${a.id===selectedIdea?'active':''}" data-open-idea="${esc(a.id)}"><small>${a.archived?'保管済み':'自然言語の案'}</small><b>${esc(ideaTitle(a))}</b><span class="idea-excerpt">${esc(a.description)}</span><small>${esc(ideaLocation(a))}</small></button>`).join('')||'<p class="empty-list">該当する能力案はありません</p>';
+}
+function cardIdeasForm(d){
+  const list=(library.abilityIdeas||[]).filter(a=>a.cardId===d.id);
+  return `<div class="section-heading"><h2>能力を、まず言葉で残す</h2><p>特性・効果・状態の区別や入力形式は、実例を集めてから整理します。</p></div><section class="panel idea-intro"><b>自由記述 → 事例の整理 → 入力形式の設計</b><p>「どう動いてほしいか」を一案ずつ記録。複数の効果をまとめた行動も、そのまま文章で書けます。</p><button class="primary" data-action="add-card-idea">＋ このカードの能力案を書く</button></section><div class="linked-ideas">${list.map(a=>`<button class="library-card" data-open-idea="${esc(a.id)}"><small>${esc(ideaLocation(a))}${a.archived?' · 保管済み':''}</small><b>${esc(ideaTitle(a))}</b><span class="prewrap">${esc(a.description)}</span></button>`).join('')||'<p class="muted">まだ能力案はありません。名前・分類は後から決められます。</p>'}</div><p class="muted">基本パラメーターは「基本情報」、入力済みの詳細は「行動・効果」で編集できます。能力案は開発用の記録として保存します。</p>`;
+}
+function ideaField(label,key,value,opts={}){return field(label,'idea-'+key,value,opts).replaceAll('data-bind=','data-idea-bind=');}
+function renderIdeaEditor(){
+  const a=currentIdea();
+  $('#main').innerHTML=`<header class="editor-head"><div><span class="eyebrow">ABILITY NOTEBOOK</span><h1 id="idea-title">${a?esc(ideaTitle(a)):'能力案を貯める'}</h1><small>自由記述 → 事例の整理 → 入力形式の設計</small></div><div class="head-actions"><button class="quiet" data-action="export-ideas">整理用に書き出す</button></div></header><div class="editor-body">${a?`<section class="panel idea-writing"><p class="muted">説明だけで保存できます。特性・効果・状態の分類は後からで大丈夫です。</p>${ideaField('能力の説明（必須）','description',a.description,{area:true,placeholder:'例：攻撃を受けるたび、攻撃してきた相手にAT×0.5で反撃する。3回当たったら3回反撃する。'})}${ideaField('名前（任意）','name',a.name,{placeholder:'仮称でも、空欄でも可'})}${ideaField('具体例・補足（任意）','examples',a.examples,{area:true,placeholder:'こう動いてほしい例、起こってほしくない挙動、未決の点など'})}<details class="subsection idea-links" ${a.cardId||a.slot?'open':''}><summary>関連カード・箇所（任意）</summary>${ideaField('関連カード','cardId',a.cardId,{select:[['','カード未指定'],...library.cards.map(d=>[d.id,d.card.name]),...(a.cardId&&!library.cards.some(d=>d.id===a.cardId)?[[a.cardId,'関連カード未取込：'+a.cardId]]:[])]})}${ideaField('関連する箇所','slot',a.slot,{select:M.ideaSlots})}</details><div class="idea-controls"><button class="primary" data-action="save-idea">保存</button><button data-action="next-idea">保存して次の案</button></div><p class="muted">文章を修正すると、保存時に原文の履歴が残ります。次の案には関連先だけを引き継ぎます。</p></section><section class="panel idea-history"><h3>原文の履歴 <small>${a.revisions.length}版</small></h3>${a.revisions.length?`<details><summary>最初に保存した原文</summary><p class="prewrap original-description">${esc(a.revisions[0].description)}</p>${a.revisions[0].examples?`<p class="prewrap">補足：${esc(a.revisions[0].examples)}</p>`:''}</details><details class="subsection"><summary>すべての保存履歴</summary>${[...a.revisions].reverse().map((r,i)=>`<article><small>${a.revisions.length-i}版 · ${esc(date(r.at))} · ${esc(ideaLocation(r))}</small><h4>${esc(r.name||'名前未指定')}${r.archived?'（保管済み）':''}</h4><p class="prewrap">${esc(r.description)}</p>${r.examples?`<p class="prewrap">補足：${esc(r.examples)}</p>`:''}</article>`).join('')}</details>`:'<p class="muted">最初の保存から原文を残します。</p>'}<div class="idea-controls"><button class="quiet" data-action="archive-idea">${a.archived?'収集中に戻す':'この案を保管する'}</button>${!a.revisions.length?'<button class="quiet" data-action="discard-idea">この未保存の案を取り消す</button>':''}</div><p class="muted">保管した案も履歴・書き出しに残ります。</p></section>`:`<section class="panel idea-intro"><h2>説明だけで、ひとつの案に。</h2><p>カードを決めずに記録できます。対象・条件・回数など、思いついた言葉でそのまま書いてください。</p><button class="primary" data-action="add-idea">＋ 能力案を書く</button></section>`}<p class="muted">「整理用に書き出す」はAIに渡すためのJSONです。原文と履歴を読み、共通項・違い・確認事項を抽出する段階で使います。端末間の移動や復元には「DB書き出し」を使ってください。</p></div>`;
+}
+function renderIdeaPreview(){
+  const a=currentIdea();
+  $('#preview').innerHTML=`<div class="section-label">ABILITY NOTE <span>開発用の原文</span></div><section class="panel idea-reading">${a?`<small>${esc(ideaLocation(a))}</small><h2>${esc(ideaTitle(a))}</h2><p class="prewrap">${esc(a.description||'説明を書くと、ここで読み返せます。')}</p>${a.examples?`<h3>具体例・補足</h3><p class="prewrap">${esc(a.examples)}</p>`:''}${a.cardId&&library.cards.some(d=>d.id===a.cardId)?`<button class="quiet" data-action="idea-card">関連カードを開く</button>`:''}`:'<h2>実例から形式を育てる</h2><p>案を集めたあとに、共通部分と例外を整理します。</p>'}</section><p class="muted">能力案の文章はカード仕様へ自動変換されません。後で整理した形式と照合できるよう、原文を保管します。</p>`;
+}
+function addIdea(cardId='',where=''){
+  if(!ready)return;library.abilityIdeas||=[];
+  const a=M.abilityIdea(cardId,where);library.abilityIdeas.unshift(a);selectedIdea=a.id;setView('ideas');$('#search').value='';$('#idea-filter').value='active';markDirty();refresh();$('#f-idea-description').focus();
+}
+function changeIdea(el){
+  const a=currentIdea();if(!a)return;const key=el.dataset.ideaBind.slice(5);if(!['description','name','examples','cardId','slot'].includes(key))return;
+  a[key]=el.value;markDirty();renderLibrary();renderIdeaPreview();$('#idea-title').textContent=ideaTitle(a);
+}
+function ideaAction(action,button){
+  if(action==='add-idea'){addIdea();return true;}
+  if(action==='save-idea'){save();return true;}
+  if(action==='next-idea'){const a=currentIdea();save().then(()=>{if(!dirty&&a)addIdea(a.cardId,a.slot);});return true;}
+  if(action==='add-card-idea'){addIdea(selected,button.dataset.ideaSlot||'');return true;}
+  if(action==='export-ideas'){
+    try{download('card-ability-corpus-'+new Date().toISOString().slice(0,10)+'.json',M.exportIdeas(M.prepareSave(library,baseline,logs)));toast('原文・履歴・関連カードの基本情報を書き出しました。整理を依頼するときに渡してください。');}catch(e){toast(e.message,true);}return true;
+  }
+  const a=currentIdea();
+  if(action==='idea-card'&&a){selected=a.cardId;tab='ideas';setView('cards');refresh();return true;}
+  if(action==='archive-idea'&&a){a.archived=!a.archived;markDirty();refresh();return true;}
+  if(action==='discard-idea'&&a&&!a.revisions.length){library.abilityIdeas=library.abilityIdeas.filter(x=>x.id!==a.id);selectedIdea=null;markDirty();refresh();return true;}
+  return false;
+}
 function refresh() {renderLibrary();renderEditor();renderPreview();}
 function renderLibrary() {
+  document.querySelectorAll('[data-view]').forEach(el=>{el.classList.toggle('active',el.dataset.view===view);el.setAttribute('aria-pressed',String(el.dataset.view===view));});
+  $('#new-card').hidden=view==='ideas';$('#new-idea').hidden=view!=='ideas';$('#status-filter').hidden=view==='ideas';$('#idea-filter').hidden=view!=='ideas';
+  $('#search-label').textContent=view==='ideas'?'能力案を検索':'カードを検索';$('#search').placeholder=view==='ideas'?'原文・名前・関連カードを検索':'名前・効果・メモを検索';
+  $('#idea-count').textContent=(library.abilityIdeas||[]).length;
+  if(view==='ideas'){renderIdeaList();return;}
   const query=$('#search').value.trim().toLocaleLowerCase(),filter=$('#status-filter').value;
   const filtered=library.cards.filter(d=>(!filter||d.status===filter)&&(!query||JSON.stringify([d.card.name,d.card.skills,d.notes,d.history,d.tags,d.gameCardId,d.id,...M.slots.flatMap(([k])=>d.card.skills[k].effects.map(e=>[defs().find(f=>f.id===e.typeId)?.name,e.typeId==='status'?M.statusText(e):'']))]).toLocaleLowerCase().includes(query)));
   $('#library-count').textContent=library.cards.length;
   $('#card-list').innerHTML=filtered.map(d=>`<button class="library-card ${d.id===selected?'active':''}" data-open="${esc(d.id)}"><div class="card-list-top"><span class="rarity r-${d.card.rarity}">${d.card.rarity}</span><span class="status status-${d.status}">${stateNames[d.status]}</span></div><b>${esc(d.card.name||'名称未設定')}</b><small>${esc(d.card.classification)} · ${d.card.cost} / α${d.card.alphaCost}</small><span class="slot-summary">${M.slots.map(([key,label])=>`<span><small>${label.replace('スキル','')}</small><strong>${d.card.skills[key].enabled?d.card.skills[key].effects.map(e=>esc(defs().find(f=>f.id===e.typeId)?.icon||'◇')).join('')||'—':'—'}</strong></span>`).join('')}</span></button>`).join('')||'<p class="empty-list">該当するカードはありません</p>';
 }
 function renderEditor() {
+  if(view==='ideas'){renderIdeaEditor();return;}
   const disclosures=new Map([...document.querySelectorAll('details[data-disclosure]')].map(el=>[el.dataset.disclosure,el.open]));
-  const d=current();if(!d)return;
+  const d=current();if(!d){$('#main').innerHTML=welcomeHtml;return;}
   const c=d.card;
-  $('#main').innerHTML=`<header class="editor-head"><div><span class="eyebrow">DESIGN WORKSPACE</span><h1 id="editor-title">${esc(c.name||'名称未設定')}</h1><small class="design-id">${esc(d.id)}</small></div><div class="head-actions"><button class="quiet" data-action="duplicate">複製</button><button class="quiet" data-action="export-card">仕様JSON</button></div></header><nav class="tabs" aria-label="編集項目">${[['basic','01','基本情報'],['effects','02','行動・効果'],['notes','03','設計メモ'],['history','04','調整履歴']].map(([key,n,label])=>`<button data-tab="${key}" aria-current="${tab===key?'page':'false'}" class="${tab===key?'active':''}"><small>${n}</small> ${label}</button>`).join('')}</nav><div class="editor-body">${tab==='basic'?basicForm(d):tab==='effects'?effectsForm(d):tab==='notes'?notesForm(d):historyForm(d)}</div>`;
+  $('#main').innerHTML=`<header class="editor-head"><div><span class="eyebrow">DESIGN WORKSPACE</span><h1 id="editor-title">${esc(c.name||'名称未設定')}</h1><small class="design-id">${esc(d.id)}</small></div><div class="head-actions"><button class="quiet" data-action="duplicate">複製</button><button class="quiet" data-action="export-card">仕様JSON</button></div></header><nav class="tabs" aria-label="編集項目">${[['basic','01','基本情報'],['ideas','02','能力案'],['effects','03','行動・効果'],['notes','04','設計メモ'],['history','05','調整履歴']].map(([key,n,label])=>`<button data-tab="${key}" aria-current="${tab===key?'page':'false'}" class="${tab===key?'active':''}"><small>${n}</small> ${label}</button>`).join('')}</nav><div class="editor-body">${tab==='basic'?basicForm(d):tab==='ideas'?cardIdeasForm(d):tab==='effects'?effectsForm(d):tab==='notes'?notesForm(d):historyForm(d)}</div>`;
   for(const el of document.querySelectorAll('details[data-disclosure]'))if(disclosures.has(el.dataset.disclosure))el.open=disclosures.get(el.dataset.disclosure);
 }
 function basicForm(d) {
   const c=d.card;
-  return `<div class="section-heading"><h2>カードの輪郭</h2><p>定型の18項目。行動の詳細は次のタブで作成します。</p></div><section class="panel"><div class="form-grid">${field('カード名','card.name',c.name)}${field('レアリティ','card.rarity',c.rarity,{select:['C','R','SR','UR']})}${number('コスト','card.cost',c.cost)}${number('αコスト','card.alphaCost',c.alphaCost,'αとして採用したときの総コスト')}${field('分類','card.classification',c.classification,{select:[...new Set([...M.classes,c.classification])]})}${field('ゲーム側カードID（任意）','gameCardId',d.gameCardId,{placeholder:'採用先との照合用'})}</div><div class="stat-fields">${number('HP','card.hp',c.hp)}${number('AT','card.at',c.at)}${number('AG','card.ag',c.ag)}</div></section><section class="panel"><h3>イラスト</h3><div class="art-input">${c.artwork?`<img src="${esc(c.artwork)}" alt="登録イラスト">`:'<div class="art-placeholder">✧</div>'}<div><button data-action="upload-art">画像を選ぶ</button> ${c.artwork?'<button class="quiet" data-action="clear-art">画像を外す</button>':''}<p class="muted">PNG・JPEG・WebP / 1枚2MiBまで</p></div></div>${field('出典・制作メモ（開発用）','artCredit',d.artCredit,{placeholder:'作者、ファイルの出所など'})}</section><section class="panel"><h3>得意地形</h3><p class="muted">複数選択可。選択がない場合はカード上を空欄にします。</p><div class="choice-chips">${[...new Set([...M.terrains.map(x=>x[0]),...c.terrains])].map(name=>`<label><input type="checkbox" data-terrain="${esc(name)}" ${c.terrains.includes(name)?'checked':''}><span>${esc(M.terrains.find(x=>x[0]===name)?.[1]||'◇')} ${esc(name)}</span></label>`).join('')}</div><button class="quiet" data-action="add-terrain">＋ 地形名を追加</button></section><section class="panel"><div class="panel-title"><h3>特性 <span class="muted">${c.traits.length?c.traits.length:'なし'}</span></h3><button class="quiet" data-action="add-trait">＋ 特性</button></div>${c.traits.map((t,i)=>traitForm(t,i)).join('')}<button class="quiet" data-action="new-trait-definition">＋ 共通特性を登録</button></section>${restrictionsForm(c)}`;
+  return `<div class="section-heading"><h2>カードの輪郭</h2><p>基本パラメーターを入力します。特性・効果・状態のアイデアは「能力案」に自由な文章で残せます。</p></div><section class="panel"><div class="form-grid">${field('カード名','card.name',c.name)}${field('レアリティ','card.rarity',c.rarity,{select:['C','R','SR','UR']})}${number('コスト','card.cost',c.cost)}${number('αコスト','card.alphaCost',c.alphaCost,'αとして採用したときの総コスト')}${field('分類','card.classification',c.classification,{select:[...new Set([...M.classes,c.classification])]})}${field('ゲーム側カードID（任意）','gameCardId',d.gameCardId,{placeholder:'採用先との照合用'})}</div><div class="stat-fields">${number('HP','card.hp',c.hp)}${number('AT','card.at',c.at)}${number('AG','card.ag',c.ag)}</div></section><section class="panel"><h3>イラスト</h3><div class="art-input">${c.artwork?`<img src="${esc(c.artwork)}" alt="登録イラスト">`:'<div class="art-placeholder">✧</div>'}<div><button data-action="upload-art">画像を選ぶ</button> ${c.artwork?'<button class="quiet" data-action="clear-art">画像を外す</button>':''}<p class="muted">PNG・JPEG・WebP / 1枚2MiBまで</p></div></div>${field('出典・制作メモ（開発用）','artCredit',d.artCredit,{placeholder:'作者、ファイルの出所など'})}</section><section class="panel"><h3>得意地形</h3><p class="muted">複数選択可。選択がない場合はカード上を空欄にします。</p><div class="choice-chips">${[...new Set([...M.terrains.map(x=>x[0]),...c.terrains])].map(name=>`<label><input type="checkbox" data-terrain="${esc(name)}" ${c.terrains.includes(name)?'checked':''}><span>${esc(M.terrains.find(x=>x[0]===name)?.[1]||'◇')} ${esc(name)}</span></label>`).join('')}</div><button class="quiet" data-action="add-terrain">＋ 地形名を追加</button></section><section class="panel"><div class="panel-title"><h3>特性 <span class="muted">${c.traits.length?c.traits.length:'なし'}</span></h3><button class="quiet" data-action="add-trait">＋ 特性</button></div><p class="muted">形式が決まっていない特性は <button class="quiet" data-action="add-card-idea" data-idea-slot="trait">能力案に書く</button></p>${c.traits.map((t,i)=>traitForm(t,i)).join('')}<button class="quiet" data-action="new-trait-definition">＋ 共通特性を登録</button></section>${restrictionsForm(c)}`;
 }
 function restrictionGrid(c,interactive=false){
   const forbidden=c.initialPlacementForbidden||[];
@@ -59,7 +112,7 @@ function gridHtml(target,interactive=false,index=0,skillSlot=slot) {
 }
 function effectsForm(d) {
   const s=d.card.skills[slot],p=`card.skills.${slot}`,limit=M.effectLimit(slot);
-  return `<div class="section-heading"><h2>行動を組み立てる</h2><p>上の効果から順に実行。各効果に対象・量・条件を設定します。</p></div><nav class="slot-tabs" aria-label="行動枠">${M.slots.map(([key,label])=>`<button data-slot="${key}" class="${slot===key?'active':''}" aria-current="${slot===key?'page':'false'}">${label}<small>${d.card.skills[key].enabled?d.card.skills[key].effects.length+'効果':'なし'}</small></button>`).join('')}</nav><section class="panel"><div class="panel-title"><h3>${M.slots.find(x=>x[0]===slot)[1]}</h3><label class="switch"><input type="checkbox" data-bind="${p}.enabled" ${s.enabled?'checked':''}> この枠を使う</label></div>${s.enabled?`<div class="form-grid">${field('カード固有の行動名',p+'.name',s.name,{placeholder:'このカードだけの名称'})}${slot==='ultimate'?number('発動に必要なターン',p+'.turns',s.turns,'カード上では「5T」などと表示'):''}${field('共通の発動時点',p+'.trigger',s.trigger,{placeholder:'戦闘開始時 / 毎ターン開始時 など'})}${field('共通の発動条件',p+'.condition',s.condition,{placeholder:'HP50%以下 など'})}</div>`:'<p class="muted">カード上には「なし」と表示します。入力済みの内容は保持します。</p>'}</section>${s.enabled?`${executionPlanHtml(s)}<section class="action-repeat-group"><div class="action-repeat-head"><h3>行動全体をひとまとまりにする</h3>${field('行動全体の繰り返し回数',p+'.repeatCount',s.repeatCount??1,{type:'number',min:1,step:1,hint:'下の全効果を上から実行して1セット。次のセットは対象選びからやり直す。'})}</div>${s.effects.map((e,i)=>effectForm(e,i)).join('')}<button class="add-effect" data-action="add-effect" ${s.effects.length>=limit?'disabled':''}>＋ 効果を追加 <small>${s.effects.length} / ${limit}</small></button><p class="muted">同じ対象で条件により量だけが変わる場合は、効果内の「条件別の効果量」を使います。</p></section>`:''}`;
+  return `<div class="section-heading"><h2>行動を組み立てる</h2><p>既存の詳細入力を引き続き使えます。まだ表現しきれない内容は <button class="quiet" data-action="add-card-idea" data-idea-slot="${slot}">能力案に書く</button></p></div><nav class="slot-tabs" aria-label="行動枠">${M.slots.map(([key,label])=>`<button data-slot="${key}" class="${slot===key?'active':''}" aria-current="${slot===key?'page':'false'}">${label}<small>${d.card.skills[key].enabled?d.card.skills[key].effects.length+'効果':'なし'}</small></button>`).join('')}</nav><section class="panel"><div class="panel-title"><h3>${M.slots.find(x=>x[0]===slot)[1]}</h3><label class="switch"><input type="checkbox" data-bind="${p}.enabled" ${s.enabled?'checked':''}> この枠を使う</label></div>${s.enabled?`<div class="form-grid">${field('カード固有の行動名',p+'.name',s.name,{placeholder:'このカードだけの名称'})}${slot==='ultimate'?number('発動に必要なターン',p+'.turns',s.turns,'カード上では「5T」などと表示'):''}${field('共通の発動時点',p+'.trigger',s.trigger,{placeholder:'戦闘開始時 / 毎ターン開始時 など'})}${field('共通の発動条件',p+'.condition',s.condition,{placeholder:'HP50%以下 など'})}</div>`:'<p class="muted">カード上には「なし」と表示します。入力済みの内容は保持します。</p>'}</section>${s.enabled?`${executionPlanHtml(s)}<section class="action-repeat-group"><div class="action-repeat-head"><h3>行動全体をひとまとまりにする</h3>${field('行動全体の繰り返し回数',p+'.repeatCount',s.repeatCount??1,{type:'number',min:1,step:1,hint:'下の全効果を上から実行して1セット。次のセットは対象選びからやり直す。'})}</div>${s.effects.map((e,i)=>effectForm(e,i)).join('')}<button class="add-effect" data-action="add-effect" ${s.effects.length>=limit?'disabled':''}>＋ 効果を追加 <small>${s.effects.length} / ${limit}</small></button><p class="muted">同じ対象で条件により量だけが変わる場合は、効果内の「条件別の効果量」を使います。</p></section>`:''}`;
 }
 function conditionForm(c,path,i,depth=0) {
   const button=(action,label,extra='')=>`<button class="quiet" data-action="${action}" data-index="${i}" data-condition-path="${esc(path)}" ${extra}>${label}</button>`;
@@ -172,14 +225,15 @@ function historyForm(d) {
 }
 function tip(label,description,display=label) {return `<button class="term" data-help="${esc(description)}" data-help-title="${esc(label)}" aria-label="${esc(label)}の説明">${esc(display)}</button>`;}
 function renderPreview() {
-  const d=current();if(!d)return;const c=d.card,warnings=M.warnings(d);
+  if(view==='ideas'){renderIdeaPreview();return;}
+  const d=current();if(!d){$('#preview').innerHTML='<div class="preview-empty">✧<p>カードや能力案を作ると<br>ここに表示されます</p></div>';return;}const c=d.card,warnings=M.warnings(d);
   $('#preview').innerHTML=`<div class="section-label">LIVE PREVIEW <span>カード詳細</span></div><article class="preview-card"><div class="preview-art ${c.artwork?'has-art':''}">${c.artwork?`<img src="${esc(c.artwork)}" alt="${esc(c.name)}のイラスト">`:'<span>✧</span>'}<div class="cost-tokens"><b>${c.cost}</b><b>α${c.alphaCost}</b></div><span class="rarity r-${c.rarity}">${c.rarity}</span></div><div class="preview-core"><h2>${esc(c.name||'名称未設定')}</h2><div class="preview-meta">${tip(c.classification,`${c.classification}。カードが属する生物・存在のまとまり。分類そのものに共通効果はありません。`,M.classIcons[c.classification]||'◈')}<div class="terrain-icons">${c.terrains.map(name=>tip('得意地形',`得意地形はカードが得意とする地形です。このカードの得意地形：${c.terrains.join('・')}。各地形での具体的な補正はゲームの地形定義に従います。`,M.terrains.find(x=>x[0]===name)?.[1]||'◇')).join('')}</div></div><div class="preview-stats">${[['HP',c.hp],['AT',c.at],['AG',c.ag]].map(([k,n])=>`<div><small>${k}</small><b>${n}</b></div>`).join('')}</div>${restrictionsPreview(c)}<div class="preview-traits"><small>特性</small><div>${c.traits.length?c.traits.map(t=>tip(t.name,[t.description||'説明未入力',t.effectAmount?'効果量：'+t.effectAmount:''].filter(Boolean).join('\n'),t.name+t.value+(t.effectAmount?' / '+t.effectAmount:''))).join(''):'なし'}</div></div>${[['alpha','αスキル'],['ultimate','必殺技'],['front','前衛行動'],['middle','中衛行動'],['rear','後衛行動']].map(([key,label])=>{
     const s=c.skills[key];return `<section class="preview-skill"><div class="preview-skill-title"><small>${label}</small>${s.enabled&&key==='ultimate'?tip('必殺技の必要ターン',`発動に必要なターン：${s.turns}T。効果の持続期間とは別の値です。`,s.turns+'T'):''}</div>${s.enabled?`<h3>${esc(s.name||'名称未設定')}</h3>${s.trigger||s.condition?`<p class="condition">${esc([s.trigger,s.condition].filter(Boolean).join(' / '))}</p>`:''}${executionPlanHtml(s,true)}${s.effects.map((e,i)=>{const def=defs().find(f=>f.id===e.typeId);return `<div class="preview-effect">${targetPreview(e.target,i,key)}<div class="effect-description"><b>${tip(def.name,def.description,def.icon)} ${esc(M.effectText({...e,repeatCount:M.execution(e).hits},defs()))}${e.typeId==='attack'&&M.execution(e).hits===1?' / 1回':''}</b>${targetDescription(e.target,e)}<p class="repeat-caption">${esc(effectExecutionNote(e))}</p>${e.triggerTiming&&e.triggerTiming!=='inherit'?`<p class="condition">発動：${esc(M.effectTimingText(e))}</p>`:''}${e.condition?`<p class="condition">条件：${esc(e.condition)}</p>`:''}${Object.keys(e.params).length?`<p>${def.parameters.filter(p=>e.params[p.key]!==undefined&&e.params[p.key]!=='').map(p=>`${esc(p.label)}：${esc(e.params[p.key])}`).join(' / ')}</p>`:''}${e.details?`<p class="prewrap">${esc(e.details)}</p>`:''}</div></div>`;}).join('')}`:'<p class="none">なし</p>'}</section>`;
   }).join('')}</div></article><details class="readiness" ${warnings.length?'':'open'}><summary>${warnings.length?`○ 作りかけの項目 ${warnings.length}`:'✓ 基本項目を入力済み'}</summary>${warnings.length?`<ul>${warnings.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p>下書きのまま保存できます。</p>`:'<p>効果の実装・バランス検証は採用時に確認します。</p>'}</details><p class="preview-caption">表示規格の確認用プレビュー<br>設計内容のゲームへの登録は未実施</p>`;
 }
 function showDialog(html) {$('#dialog-body').innerHTML=html;if(!$('#dialog').open)$('#dialog').showModal();}
 function newDialog() {showDialog(`<div class="dialog-heading"><div><span class="eyebrow">NEW DESIGN</span><h2>新しいカード</h2></div><button data-action="close-dialog" aria-label="閉じる">×</button></div><p>入力例を選んで、自由に作り替えられます。</p><div class="starter-grid">${[['blank','＋','白紙から'],['attack','⚔','攻撃型から'],['support','✚','支援型から']].map(([key,icon,label])=>`<button data-template="${key}"><span>${icon}</span><b>${label}</b></button>`).join('')}</div>`);}
-function addCard(kind) {if(!ready)return;const d=M.template(kind);library.cards.unshift(d);selected=d.id;tab='basic';markDirty();$('#dialog').close();refresh();}
+function addCard(kind) {if(!ready)return;setView('cards');const d=M.template(kind);library.cards.unshift(d);selected=d.id;tab='basic';markDirty();$('#dialog').close();refresh();}
 function catalogDialog() {showDialog(`<div class="dialog-heading"><div><span class="eyebrow">EFFECT CATALOG</span><h2>効果の定義</h2></div><button data-action="close-dialog" aria-label="閉じる">×</button></div><p>定義を追加すると、全カードの「効果の種類」から選べます。</p><button class="primary" data-action="new-definition">＋ 新しい効果種類</button><div class="catalog-list">${defs().map(def=>`<div><span class="catalog-icon">${esc(def.icon)}</span><div><b>${esc(def.name)}</b><code>${esc(def.id)}</code><small>${esc(def.description)}</small></div>${library.definitions.some(x=>x.id===def.id)?`<button class="quiet" data-edit-definition="${esc(def.id)}">編集</button>`:'<small>標準</small>'}</div>`).join('')}</div><p class="muted">ここで追加するのは設計用の定義です。戦闘処理への接続は採用時に実装します。</p>`);}
 function definitionDialog(editId='') {
   const def=library.definitions.find(x=>x.id===editId)||{id:'',name:'',icon:'◇',description:'',parameters:[]};
@@ -228,24 +282,29 @@ function changeBound(el) {
 }
 document.addEventListener('input',event=>{
   const el=event.target;
+  if(el.dataset.ideaBind){changeIdea(el);return;}
   if(el.dataset.bind&&el.tagName!=='SELECT'&&el.type!=='checkbox')changeBound(el);
   if(el.dataset.log) {logs[selected]||={};logs[selected][el.dataset.log]=el.value;markDirty();}
 });
 document.addEventListener('change',event=>{
   const el=event.target;
+  if(el.dataset.ideaBind&&el.tagName==='SELECT'){changeIdea(el);renderIdeaEditor();return;}
   if(el.dataset.bind&&(el.tagName==='SELECT'||el.type==='checkbox')){changeBound(el);renderEditor();}
   if(el.dataset.terrain) {const c=current().card;c.terrains=el.checked?[...c.terrains,el.dataset.terrain]:c.terrains.filter(x=>x!==el.dataset.terrain);markDirty();renderPreview();}
 });
 document.addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button)return;
   if(button.dataset.template){addCard(button.dataset.template);return;}
-  if(button.dataset.open){selected=button.dataset.open;refresh();return;}
+  if(button.dataset.open){selected=button.dataset.open;setView('cards');refresh();return;}
+  if(button.dataset.view){setView(button.dataset.view);refresh();return;}
+  if(button.dataset.openIdea){selectedIdea=button.dataset.openIdea;setView('ideas');refresh();return;}
   if(button.dataset.tab){tab=button.dataset.tab;renderEditor();return;}
   if(button.dataset.slot){slot=button.dataset.slot;renderEditor();return;}
   if(button.dataset.help!==undefined){showDialog(`<div class="dialog-heading"><h2>${esc(button.dataset.helpTitle)}</h2><button data-action="close-dialog" aria-label="閉じる">×</button></div><p class="prewrap">${esc(button.dataset.help)}</p>`);return;}
   if(button.dataset.editDefinition){definitionDialog(button.dataset.editDefinition);return;}
   const action=button.dataset.action,d=current(),i=Number(button.dataset.index),s=d?.card.skills[slot];
   if(!action)return;
+  if(ideaAction(action,button))return;
   if(action==='close-dialog'){$('#dialog').close();return;}
   if(action==='catalog'){catalogDialog();return;}
   if(action==='export-backup'){storage.latestBackup().then(data=>data?download('card-studio-backup.json',data):toast('更新前のバックアップはまだありません。')).catch(e=>toast(e.message,true));return;}
@@ -255,7 +314,7 @@ document.addEventListener('click',event=>{
   if(action==='upload-art'){$('#art-file').click();return;}
   if(action==='export-card'){download(`card-spec-${d.id}.json`,{...M.exportCard(d),traitDefinitions:M.clone(M.traitDefinitions(library).filter(def=>d.card.traits.some(t=>t.definitionId===def.id))),definitions:M.clone(defs().filter(def=>Object.values(d.card.skills).some(sk=>sk.effects.some(e=>e.typeId===def.id))))});return;}
   if(action==='add-terrain'){showDialog('<div class="dialog-heading"><h2>地形名を追加</h2><button data-action="close-dialog" aria-label="閉じる">×</button></div><form id="terrain-form"><label class="field"><span>新しい地形名</span><input name="terrain" required maxlength="30"></label><p class="muted">設計用の地形名です。補正と専用アイコンは採用時に実装します。</p><button class="primary">追加</button></form>');return;}
-  if(action==='duplicate'){const copy=M.duplicate(d);library.cards.unshift(copy);selected=copy.id;tab='basic';}
+  if(action==='duplicate'){const copy=M.duplicate(d);library.cards.unshift(copy);M.duplicateIdeas(library,d.id,copy.id);selected=copy.id;tab='basic';}
   if(action==='clear-art')d.card.artwork='';
   if(action==='new-trait-definition'){traitDefinitionDialog();return;}
   if(action==='add-trait')d.card.traits.push({definitionId:'',name:'',value:'',effectAmount:'',description:''});
@@ -307,15 +366,17 @@ document.addEventListener('submit',event=>{
   }
 });
 $('#new-card').addEventListener('click',newDialog);
+$('#new-idea').addEventListener('click',()=>addIdea());
+$('#idea-filter').addEventListener('change',renderLibrary);
 $('#catalog').addEventListener('click',catalogDialog);
 $('#search').addEventListener('input',renderLibrary);
 $('#status-filter').addEventListener('change',renderLibrary);
 $('#save').addEventListener('click',save);
-$('#export-library').addEventListener('click',()=>download(`card-studio-${new Date().toISOString().slice(0,10)}.json`,M.prepareSave(library,baseline,logs)));
+$('#export-library').addEventListener('click',()=>{try{download(`card-studio-${new Date().toISOString().slice(0,10)}.json`,M.prepareSave(library,baseline,logs));}catch(e){toast(e.message,true);}});
 $('#import-library').addEventListener('click',()=>$('#json-file').click());
 $('#json-file').addEventListener('change',async event=>{
   const file=event.target.files[0];if(!file)return;
-  try {if(file.size>25*1024*1024)throw Error('25MiB以下のJSONを指定してください。');const incoming=JSON.parse(await file.text()),result=M.mergeLibraries(library,incoming);library=result.library;selected||=library.cards[0]?.id;markDirty();refresh();toast(`取り込みました：新規${result.added}件、同じIDで内容が異なる設計の複製${result.copied}件。元データは保持しています。保存で確定します。`);}catch(e){toast('取り込めませんでした：'+e.message,true);}finally{event.target.value='';}
+  try {if(file.size>25*1024*1024)throw Error('25MiB以下のJSONを指定してください。');const incoming=JSON.parse(await file.text()),result=M.mergeLibraries(library,incoming);library=result.library;selected||=library.cards[0]?.id;selectedIdea||=library.abilityIdeas?.[0]?.id;if(!library.cards.length&&library.abilityIdeas?.length)setView('ideas');markDirty();refresh();toast(`取り込みました：カード新規${result.added}件・コピー${result.copied}件、能力案新規${result.ideasAdded}件・コピー${result.ideasCopied}件。元データは保持しています。保存で確定します。`);}catch(e){toast('取り込めませんでした：'+e.message,true);}finally{event.target.value='';}
 });
 $('#art-file').addEventListener('change',async event=>{
   const file=event.target.files[0],design=current();if(!file)return;
@@ -329,7 +390,7 @@ document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&e
 window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
 (async()=>{
   try {
-    storage=await window.StudioStorage.connect();library=M.validateLibrary(storage.initialLibrary);baseline=M.clone(library);ready=true;selected=library.cards[0]?.id;
+    storage=await window.StudioStorage.connect();library=M.validateLibrary(storage.initialLibrary);baseline=M.clone(library);ready=true;selected=library.cards[0]?.id;selectedIdea=library.abilityIdeas?.[0]?.id;if(!selected&&selectedIdea)setView('ideas');
     $('#save-state').textContent=storage.mode==='device'?'✓ この端末のDBに接続':'✓ ローカルDBに接続';
     if(storage.mode==='device'){
       $('.library-footer').innerHTML='<div><span class="local-dot"></span> この端末の開発用DB<small>PCとの受け渡しはJSONで</small></div><button class="quiet wide" data-action="export-backup">前回の保存を書き出す</button><button class="quiet wide" data-action="catalog">◇ 効果の定義を管理</button>';

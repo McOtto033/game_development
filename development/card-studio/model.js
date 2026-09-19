@@ -186,7 +186,7 @@
       check(object(d.notes)&&[...conceptFields,...evaluationFields].every(([k])=>str(d.notes[k]))&&Array.isArray(d.history),'設計メモ・調整履歴の形式が不正です。');
       for(const h of d.history)check(object(h)&&str(h.id)&&str(h.at)&&str(h.reason)&&str(h.result)&&str(h.decision)&&Array.isArray(h.changes)&&h.changes.every(x=>object(x)&&str(x.path)),'調整履歴の形式が不正です。');
     }
-    return lib;
+    validateIdeas(lib.abilityIdeas);return lib;
   }
   function warnings(d) {
     const out=[];const c=d.card;
@@ -223,6 +223,41 @@
     return [{path,before:val(before),after:val(after)}];
   }
   function designBody(d) {const {history,createdAt,updatedAt,...body}=d;return body;}
+  const ideaSlots=[['','未指定'],['trait','特性'],['state','状態'],...slots];
+  function abilityIdea(cardId='',slot='') {
+    const now=new Date().toISOString();
+    return {id:id('idea'),name:'',description:'',examples:'',cardId,slot,archived:false,createdAt:now,updatedAt:now,revisions:[]};
+  }
+  function ideaBody(a) {return Object.fromEntries(['name','description','examples','cardId','slot','archived'].map(k=>[k,a[k]]));}
+  function validateIdeas(ideas) {
+    if(ideas===undefined)return;
+    const check=(ok,message)=>{if(!ok)throw Error(message);},str=v=>typeof v==='string',obj=v=>v&&typeof v==='object'&&!Array.isArray(v);
+    check(Array.isArray(ideas)&&ideas.length<=1000,'能力案は1000件までの配列にしてください。');
+    check(new Set(ideas.map(a=>a?.id)).size===ideas.length,'能力案のIDが重複しています。');
+    const body=a=>obj(a)&&['name','description','examples','cardId','slot'].every(k=>str(a[k]))&&a.description.trim()&&ideaSlots.some(([k])=>k===a.slot)&&typeof a.archived==='boolean';
+    for(const a of ideas){
+      check(obj(a)&&str(a.id)&&a.id&&body(a)&&str(a.createdAt)&&str(a.updatedAt)&&Array.isArray(a.revisions),'能力案の説明は必須です。名前・関連先・履歴の形式も確認してください。');
+      check(a.revisions.every(r=>body(r)&&str(r.id)&&r.id&&str(r.at))&&new Set(a.revisions.map(r=>r.id)).size===a.revisions.length,'能力案の原文履歴が不正です。');
+    }
+  }
+  function remapIdea(a,cardIds) {
+    const copy=clone(a),map=k=>cardIds.get(k)||k;copy.cardId=map(copy.cardId);
+    copy.revisions.forEach(r=>r.cardId=map(r.cardId));return copy;
+  }
+  function duplicateIdeas(lib,from,to) {
+    const copies=(lib.abilityIdeas||[]).filter(a=>a.cardId===from).map(a=>{
+      const copy=remapIdea(a,new Map([[from,to]]));copy.id=id('idea');copy.sourceIdeaId=a.id;
+      copy.createdAt=copy.updatedAt=new Date().toISOString();return copy;
+    });
+    if(copies.length)lib.abilityIdeas.push(...copies);
+  }
+  function exportIdeas(lib) {
+    validateLibrary(lib);
+    return {format:'card-ability-corpus',schemaVersion:1,exportedAt:new Date().toISOString(),
+      purpose:'自然言語の能力案を整理し、表現可能なUI・フォーマットを設計するための事例集。原文を保持し、不明点は推測で確定せず質問として抽出する。ゲームへの登録・実行データではない。',
+      abilityIdeas:clone(lib.abilityIdeas||[]),
+      relatedCards:lib.cards.filter(d=>(lib.abilityIdeas||[]).some(a=>a.cardId===d.id)).map(d=>({designId:d.id,name:d.card.name,cost:d.card.cost,alphaCost:d.card.alphaCost,rarity:d.card.rarity,classification:d.card.classification,hp:d.card.hp,at:d.card.at,ag:d.card.ag}))};
+  }
   function prepareSave(lib,baseline,log={}) {
     validateLibrary(lib);const next=clone(lib);const now=new Date().toISOString();
     next.cards.forEach(d=>{
@@ -231,6 +266,11 @@
       const note=log[d.id]||{};
       if(changes.length||note.reason||note.result) {
         d.updatedAt=now;d.history.push({id:id('rev'),at:now,reason:note.reason||(old?'設計内容を更新':'新規作成'),result:note.result||'',decision:note.decision||d.status,changes});
+      }
+    });
+    next.abilityIdeas?.forEach(a=>{
+      if(!a.revisions.length||JSON.stringify(ideaBody(a.revisions.at(-1)))!==JSON.stringify(ideaBody(a))){
+        a.updatedAt=now;a.revisions.push({id:id('idea_rev'),at:now,...ideaBody(a)});
       }
     });return next;
   }
@@ -246,15 +286,24 @@
       if(prior&&JSON.stringify(prior)!==JSON.stringify(def))throw Error(`効果ID「${def.id}」の定義が異なります。取込元のIDを変更してください。`);
       if(!prior)merged.definitions.push(clone(def));
     }
+    const cardIds=new Map();
     for(const d of incoming.cards) {
       const prior=merged.cards.find(x=>x.id===d.id);
       if(prior&&JSON.stringify(prior)===JSON.stringify(d))continue;
       const imported=clone(d);
       if(prior) {imported.id=id('design');imported.card.name+='（取込コピー）';imported.notes.references=[imported.notes.references,`取込元の設計ID: ${d.id}`].filter(Boolean).join('\n');}
+      cardIds.set(d.id,imported.id);
       merged.cards.push(imported);prior?copied++:added++;
     }
-    validateLibrary(merged);return {library:merged,added,copied};
+    let ideasAdded=0,ideasCopied=0;
+    for(const a of incoming.abilityIdeas||[]){
+      const imported=remapIdea(a,cardIds),prior=(merged.abilityIdeas||[]).find(x=>x.id===a.id);
+      if(prior&&JSON.stringify(prior)===JSON.stringify(imported))continue;
+      if(prior){imported.id=id('idea');imported.sourceIdeaId=a.id;ideasCopied++;}else ideasAdded++;
+      merged.abilityIdeas||=[];merged.abilityIdeas.push(imported);
+    }
+    validateLibrary(merged);return {library:merged,added,copied,ideasAdded,ideasCopied};
   }
   function exportCard(d) {return {schemaVersion:1,format:'card-design-spec',designId:d.id,gameCardId:d.gameCardId,card:{...clone(d.card),initialPlacementForbidden:clone(d.card.initialPlacementForbidden||[]),deckLimit:d.card.deckLimit??null}};}
-  return {slots,effectLimit,execution,setExecution,executionText,effectTimings,effectTimingText,placementText,stats,statText,statuses,statusText,targetSources,targetSource,targetText,classes,classIcons,terrains,builtins,builtinTraits,traitDefinitions,originCell,targetCells,toggleTargetCell,changeTargetBasis,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard};
+  return {slots,effectLimit,execution,setExecution,executionText,effectTimings,effectTimingText,placementText,stats,statText,statuses,statusText,targetSources,targetSource,targetText,classes,classIcons,terrains,builtins,builtinTraits,traitDefinitions,originCell,targetCells,toggleTargetCell,changeTargetBasis,conceptFields,evaluationFields,clone,id,definitions,effect,blank,template,duplicate,amountText,effectText,validateLibrary,warnings,diff,prepareSave,mergeLibraries,exportCard,ideaSlots,abilityIdea,validateIdeas,duplicateIdeas,exportIdeas};
 });

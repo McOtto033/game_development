@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ja">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta name="theme-color" content="#f5f4ef"><title>カード設計室 v2</title>
+ <link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="styles.css">
+ <script defer src="model.js"></script><script defer src="storage.js"></script><script defer src="app.js"></script>
+</head>
+<body>
+ <header class="topbar">
+  <div class="brand"><span class="brand-icon">▧</span><div><b>CARD STUDIO <em>02</em></b><small>カード設計室 · 入力ツリー版</small></div></div>
+  <nav class="top-actions" aria-label="データ操作"><a href="../card-studio/" target="_blank" rel="noopener" class="old-link">旧版を開く ↗</a><button data-action="catalog">定義DB</button><button data-action="import">取り込み</button><button data-action="export">DB書き出し</button><button class="primary" data-action="save" id="save" disabled>保存 <kbd>Ctrl S</kbd></button></nav>
+ </header>
+ <div id="notice" class="notice" role="status" hidden></div>
+ <div class="layout">
+  <aside class="library"><div class="overline">YOUR COLLECTION <span id="count">0</span></div><button class="primary wide" data-action="new">＋ 新しいカード</button><label class="search"><span class="sr-only">カードを検索</span><input type="search" id="search" placeholder="カード名・効果で検索"></label><div id="card-list"></div><button class="text-button" data-action="archives" id="archives" hidden>旧版データの保管庫</button><div class="library-foot"><span class="dot"></span><span id="save-state">読み込み中…</span><small>この端末に保存 · 旧版と独立</small></div></aside>
+  <main id="editor"><div class="loading">入力定義を読み込んでいます…</div></main>
+  <aside class="preview"><div class="overline">CARD PREVIEW <span class="live-dot">LIVE</span></div><div id="preview"></div></aside>
+ </div>
+ <dialog id="dialog"><div id="dialog-body"></div></dialog>
+ <input id="json-file" type="file" accept=".json,application/json" hidden><input id="schema-file" type="file" accept=".json,application/json" hidden><input id="art-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+</body>
+</html>

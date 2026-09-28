@@ -1,0 +1,6417 @@
+{
+  "schemaVersion": "card-ui-tree/2.0-draft",
+  "purpose": "ui-definition-draft",
+  "runtimeReady": false,
+  "forms": {
+    "state.poison": [
+      {
+        "id": "state.poison.damage",
+        "key": "damage",
+        "label": "1回の毒ダメージ",
+        "path": [
+          "状態の専用入力",
+          "毒（現行）"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:quantity",
+        "default": {
+          "mode": "fixed",
+          "value": 6
+        },
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.poisonEnd": [
+      {
+        "id": "state.poisonEnd.damage",
+        "key": "damage",
+        "label": "1回の毒ダメージ",
+        "path": [
+          "状態の専用入力",
+          "毒（終了時案）"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:quantity",
+        "default": {
+          "mode": "fixed"
+        },
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.regen": [
+      {
+        "id": "state.regen.heal",
+        "key": "heal",
+        "label": "1回の回復量",
+        "path": [
+          "状態の専用入力",
+          "継続回復（開始時予約）"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:quantity",
+        "default": {
+          "mode": "fixed"
+        },
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.regenEnd": [
+      {
+        "id": "state.regenEnd.heal",
+        "key": "heal",
+        "label": "1回の回復量",
+        "path": [
+          "状態の専用入力",
+          "継続回復（終了時案）"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:quantity",
+        "default": {
+          "mode": "fixed"
+        },
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.armorFlat": [
+      {
+        "id": "state.armorFlat.cut",
+        "key": "cut",
+        "label": "1被弾の軽減量",
+        "path": [
+          "状態の専用入力",
+          "装甲（固定軽減）"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0,
+          "unit": "value"
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.armorRatio": [
+      {
+        "id": "state.armorRatio.receivedMultiplier",
+        "key": "receivedMultiplier",
+        "label": "被ダメージ倍率",
+        "path": [
+          "状態の専用入力",
+          "装甲（被ダメ倍率案）"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0,
+          "exclusiveMaximum": 1,
+          "unit": "ratio"
+        },
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.defenseDown": [
+      {
+        "id": "state.defenseDown.extra",
+        "key": "extra",
+        "label": "1被弾の追加量",
+        "path": [
+          "状態の専用入力",
+          "防御低下（固定加算）"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": 4,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0,
+          "unit": "value"
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.wound": [
+      {
+        "id": "state.wound.receivedMultiplier",
+        "key": "receivedMultiplier",
+        "label": "被ダメージ倍率",
+        "path": [
+          "状態の専用入力",
+          "裂傷（被ダメ倍率案）"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "exclusiveMinimum": 1,
+          "unit": "ratio"
+        },
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.reflectShell": [
+      {
+        "id": "state.reflectShell.returnRate",
+        "key": "returnRate",
+        "label": "実HP損失に掛ける反射率",
+        "path": [
+          "状態の専用入力",
+          "反射殻（現行）"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": 0.4,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0,
+          "unit": "ratio"
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.reflectPrevent": [
+      {
+        "id": "state.reflectPrevent.returnRate",
+        "key": "returnRate",
+        "label": "返すダメージの倍率",
+        "path": [
+          "状態の専用入力",
+          "反射（無傷案）"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0,
+          "unit": "ratio"
+        },
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.counter": [
+      {
+        "id": "state.counter.atMultiplier",
+        "key": "atMultiplier",
+        "label": "保持者ATに掛ける反撃倍率",
+        "path": [
+          "状態の専用入力",
+          "反撃"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0,
+          "unit": "ratio"
+        },
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.contactPoison": [
+      {
+        "id": "state.contactPoison.poisonDamage",
+        "key": "poisonDamage",
+        "label": "与える毒量",
+        "path": [
+          "状態の専用入力",
+          "接触毒"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:quantity",
+        "default": {
+          "mode": "fixed",
+          "value": 6
+        },
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "state.contactPoison.poisonTurns",
+        "key": "poisonTurns",
+        "label": "与える毒の期間",
+        "path": [
+          "状態の専用入力",
+          "接触毒"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 3,
+        "showIf": [],
+        "constraints": {
+          "minimum": 1,
+          "unit": "value"
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.healBlock": [],
+    "state.actionDisable": [],
+    "state.taunt": [
+      {
+        "id": "state.taunt.range",
+        "key": "range",
+        "label": "引き付けるサーチ範囲",
+        "path": [
+          "状態の専用入力",
+          "ヘイト"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:area",
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.stealth": [],
+    "state.guardShare": [
+      {
+        "id": "state.guardShare.protectedTarget",
+        "key": "protectedTarget",
+        "label": "守る対象",
+        "path": [
+          "状態の専用入力",
+          "守護（肩代わり）"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:target",
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "state.guardShare.shareRate",
+        "key": "shareRate",
+        "label": "保持者が肩代わりする割合",
+        "path": [
+          "状態の専用入力",
+          "守護（肩代わり）"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0,
+          "maximum": 1,
+          "unit": "ratio"
+        },
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.barrier": [
+      {
+        "id": "state.barrier.capacity",
+        "key": "capacity",
+        "label": "防ぐ総量",
+        "path": [
+          "状態の専用入力",
+          "バリア（消費式案）"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0,
+          "unit": "value"
+        },
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "付与期間は共通欄。カード別の可変入力は未接続の案",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "state.paralysis": [],
+    "trait.flying": [],
+    "trait.aquatic": [],
+    "trait.dash": [],
+    "trait.predation": [],
+    "trait.mimicry": [],
+    "trait.poisonous": [],
+    "trait.poisonResist": [],
+    "trait.swarm": [],
+    "trait.pack": [],
+    "trait.mycelium": [],
+    "trait.parasitic": [],
+    "trait.ancient": [],
+    "trait.giant": [],
+    "trait.carapace": [],
+    "trait.crystal": [],
+    "trait.electric": [],
+    "trait.armored": [
+      {
+        "id": "trait.armored.cut",
+        "key": "cut",
+        "label": "軽減量",
+        "path": [
+          "特性の専用入力",
+          "装甲"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "常時のため期間入力なし",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "trait.ambush": [
+      {
+        "id": "trait.ambush.atMultiplier",
+        "key": "atMultiplier",
+        "label": "保持者AT倍率",
+        "path": [
+          "特性の専用入力",
+          "待ち伏せ"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "常時のため期間入力なし",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "trait.legacy.steady": [],
+    "trait.legacy.seaHp": [],
+    "trait.legacy.rangedTerrain": [],
+    "trait.legacy.blessing": [],
+    "trait.legacy.widePrayer": [],
+    "trait.legacy.quickStart": [],
+    "trait.legacy.laneBreaker": [],
+    "trait.legacy.middleRaid": [],
+    "trait.legacy.rampartCraft": [],
+    "trait.legacy.devotedWard": [],
+    "trait.legacy.sharpCommand": [],
+    "trait.legacy.generalBreaker": [],
+    "trait.legacy.rearCannon": [],
+    "trait.legacy.rearWard": [],
+    "trait.legacy.executeHunter": [],
+    "trait.legacy.deepSnare": [],
+    "trait.legacy.armorPredator": [],
+    "trait.legacy.contactStance": [],
+    "trait.legacy.reflectStance": [],
+    "alpha.legacy.frontArmor": [],
+    "alpha.legacy.harborWall": [],
+    "alpha.legacy.firstSnipe": [],
+    "alpha.legacy.firstFallHeal": [],
+    "alpha.legacy.frontDuel": [],
+    "alpha.legacy.turnThreeCharge": [],
+    "alpha.legacy.scoutLead": [],
+    "alpha.legacy.terrainDiscount": [],
+    "alpha.legacy.midAg": [],
+    "alpha.legacy.allOutOrder": [],
+    "alpha.legacy.finishSignal": [],
+    "alpha.legacy.openingBarrage": [],
+    "alpha.legacy.fallbackWard": [],
+    "cell.pending": [],
+    "card": [
+      {
+        "id": "card.name",
+        "key": "name",
+        "label": "カード名",
+        "path": [
+          "カード",
+          "基本"
+        ],
+        "widget": "text",
+        "type": "string",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "minLength": 1
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.artwork",
+        "key": "artwork",
+        "label": "イラスト",
+        "path": [
+          "カード",
+          "基本"
+        ],
+        "widget": "image",
+        "type": "string",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.cost",
+        "key": "cost",
+        "label": "コスト",
+        "path": [
+          "カード",
+          "基本"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 3,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.alphaCost",
+        "key": "alphaCost",
+        "label": "α指定時の総コスト",
+        "path": [
+          "カード",
+          "基本"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 3,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "追加料金ではなく総コスト",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.rarity",
+        "key": "rarity",
+        "label": "レアリティ",
+        "path": [
+          "カード",
+          "基本"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:rarity",
+        "default": "C",
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.classification",
+        "key": "classification",
+        "label": "分類",
+        "path": [
+          "カード",
+          "基本"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:class",
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.hp",
+        "key": "hp",
+        "label": "HP",
+        "path": [
+          "カード",
+          "基本"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 100,
+        "showIf": [],
+        "constraints": {
+          "minimum": 1
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.at",
+        "key": "at",
+        "label": "AT",
+        "path": [
+          "カード",
+          "基本"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 30,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.ag",
+        "key": "ag",
+        "label": "AG",
+        "path": [
+          "カード",
+          "基本"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 20,
+        "showIf": [],
+        "constraints": {
+          "minimum": 0
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.terrains",
+        "key": "terrains",
+        "label": "得意地形",
+        "path": [
+          "カード",
+          "必要時に設定"
+        ],
+        "widget": "multi",
+        "type": "array",
+        "ref": "enum:terrain",
+        "default": [],
+        "showIf": [],
+        "constraints": {
+          "uniqueItems": true
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.traits",
+        "key": "traits",
+        "label": "特性を追加",
+        "path": [
+          "カード",
+          "必要時に設定"
+        ],
+        "widget": "list",
+        "type": "array",
+        "ref": "form:trait",
+        "default": [],
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.initialPlacementForbidden",
+        "key": "initialPlacementForbidden",
+        "label": "初期配置禁止マス",
+        "path": [
+          "カード",
+          "必要時に設定"
+        ],
+        "widget": "grid",
+        "type": "array",
+        "ref": null,
+        "default": [],
+        "showIf": [],
+        "constraints": {
+          "items": "integer",
+          "minimum": 0,
+          "maximum": 8,
+          "uniqueItems": true
+        },
+        "view": "detail",
+        "adoption": "adopted",
+        "note": "",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.deckLimit",
+        "key": "deckLimit",
+        "label": "枚数制限区分",
+        "path": [
+          "カード",
+          "必要時に設定"
+        ],
+        "widget": "number",
+        "type": "integer|null",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "minimum": 1
+        },
+        "view": "detail",
+        "adoption": "adopted",
+        "note": "null＝制限なし",
+        "source": "development/card-studio/CARD_INFORMATION.md"
+      },
+      {
+        "id": "card.skills.front",
+        "key": "skills.front",
+        "label": "前衛",
+        "path": [
+          "カード",
+          "行動枠"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:skill",
+        "default": {
+          "mode": "none"
+        },
+        "showIf": [],
+        "constraints": {
+          "context": {
+            "slot": "front"
+          },
+          "maxEffects": 2
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "card.skills.middle",
+        "key": "skills.middle",
+        "label": "中衛",
+        "path": [
+          "カード",
+          "行動枠"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:skill",
+        "default": {
+          "mode": "none"
+        },
+        "showIf": [],
+        "constraints": {
+          "context": {
+            "slot": "middle"
+          },
+          "maxEffects": 2
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "card.skills.rear",
+        "key": "skills.rear",
+        "label": "後衛",
+        "path": [
+          "カード",
+          "行動枠"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:skill",
+        "default": {
+          "mode": "none"
+        },
+        "showIf": [],
+        "constraints": {
+          "context": {
+            "slot": "rear"
+          },
+          "maxEffects": 2
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "card.skills.ultimate",
+        "key": "skills.ultimate",
+        "label": "必殺技",
+        "path": [
+          "カード",
+          "行動枠"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:skill",
+        "default": {
+          "mode": "none"
+        },
+        "showIf": [],
+        "constraints": {
+          "context": {
+            "slot": "ultimate"
+          },
+          "maxEffects": 3
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "card.skills.alpha",
+        "key": "skills.alpha",
+        "label": "αスキル",
+        "path": [
+          "カード",
+          "行動枠"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:skill",
+        "default": {
+          "mode": "none"
+        },
+        "showIf": [],
+        "constraints": {
+          "context": {
+            "slot": "alpha"
+          },
+          "maxEffects": 2
+        },
+        "view": "basic",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "card.id",
+        "key": "id",
+        "label": "固定ID",
+        "path": [
+          "カード",
+          "自動管理"
+        ],
+        "widget": "generated",
+        "type": "string",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "auto",
+        "adoption": "proposal",
+        "note": "新規時生成・改名時保持",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "card.attributes",
+        "key": "attributes",
+        "label": "行動・耐性用属性",
+        "path": [
+          "カード",
+          "必要時に設定"
+        ],
+        "widget": "multi",
+        "type": "array",
+        "ref": "enum:attribute",
+        "default": [],
+        "showIf": [],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "candidate",
+        "note": "属性だけで相性補正を自動追加しない",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "card.codexText",
+        "key": "codexText",
+        "label": "図鑑文",
+        "path": [
+          "カード",
+          "必要時に設定"
+        ],
+        "widget": "text",
+        "type": "string",
+        "ref": null,
+        "default": "",
+        "showIf": [],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "説明用。戦闘処理には使わない",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "skill": [
+      {
+        "id": "skill.mode",
+        "key": "mode",
+        "label": "なし／組み立てる",
+        "path": [
+          "行動",
+          "通常・必殺"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:skillSimple",
+        "default": "none",
+        "showIf": [
+          {
+            "field": "$slot",
+            "in": [
+              "front",
+              "middle",
+              "rear",
+              "ultimate"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "skill.mode.branch2",
+        "key": "mode",
+        "label": "なし／組立／登録済み",
+        "path": [
+          "行動",
+          "αスキル"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:skillMode",
+        "default": "none",
+        "showIf": [
+          {
+            "field": "$slot",
+            "in": [
+              "alpha"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "skill.presetId",
+        "key": "presetId",
+        "label": "定義を選ぶ",
+        "path": [
+          "行動",
+          "登録済み"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "def:alpha",
+        "default": null,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "preset"
+            ]
+          }
+        ],
+        "constraints": {
+          "slotOnly": [
+            "alpha"
+          ]
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "既存αキーを保存する入口。通常枠は組立",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "skill.name",
+        "key": "name",
+        "label": "固有名",
+        "path": [
+          "行動",
+          "組み立てる"
+        ],
+        "widget": "text",
+        "type": "string",
+        "ref": null,
+        "default": "",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "custom"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "skill.turns",
+        "key": "turns",
+        "label": "必要ターン",
+        "path": [
+          "行動",
+          "必殺技"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 5,
+        "showIf": [
+          {
+            "field": "$slot",
+            "in": [
+              "ultimate"
+            ]
+          },
+          {
+            "field": "mode",
+            "in": [
+              "custom"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 3
+        },
+        "view": "basic",
+        "adoption": "current",
+        "note": "本体の現行最短は3T",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "skill.trigger",
+        "key": "trigger",
+        "label": "共通発動時点",
+        "path": [
+          "行動",
+          "αスキル"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:trigger",
+        "default": {},
+        "showIf": [
+          {
+            "field": "$slot",
+            "in": [
+              "alpha"
+            ]
+          },
+          {
+            "field": "mode",
+            "in": [
+              "custom"
+            ]
+          }
+        ],
+        "constraints": {
+          "context": {
+            "allowInherit": false
+          }
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "最上位は時点を必ず指定",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "skill.condition",
+        "key": "condition",
+        "label": "発動条件",
+        "path": [
+          "行動",
+          "詳細"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:predicate",
+        "default": {
+          "kind": "none"
+        },
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "custom"
+            ]
+          }
+        ],
+        "constraints": {
+          "context": {
+            "predicateUse": "activation"
+          }
+        },
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "効果対象のサーチ条件とは別",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "skill.effects",
+        "key": "effects",
+        "label": "効果を追加・並べ替え",
+        "path": [
+          "行動",
+          "組み立てる"
+        ],
+        "widget": "list",
+        "type": "array",
+        "ref": "form:effect",
+        "default": [],
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "custom"
+            ]
+          }
+        ],
+        "constraints": {
+          "maxItemsByContext": {
+            "ultimate": 3,
+            "default": 2
+          }
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "効果順を保持",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "skill.repeatCount",
+        "key": "repeatCount",
+        "label": "行動全体の繰り返し",
+        "path": [
+          "行動",
+          "詳細"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 1,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "custom"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 1
+        },
+        "view": "detail",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "effect": [
+      {
+        "id": "effect.type",
+        "key": "type",
+        "label": "種類",
+        "path": [
+          "効果",
+          "共通"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:effectType",
+        "default": "attack",
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.target",
+        "key": "target",
+        "label": "対象",
+        "path": [
+          "効果",
+          "共通"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:target",
+        "default": null,
+        "showIf": [
+          {
+            "not": {
+              "all": [
+                {
+                  "field": "type",
+                  "in": [
+                    "special"
+                  ]
+                },
+                {
+                  "field": "specialKind",
+                  "in": [
+                    "terrain",
+                    "cellEffect"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "対象欄の共通部品をその場で展開。地形・マス効果は設置マスのみ",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.amount",
+        "key": "amount",
+        "label": "ダメージ／回復量",
+        "path": [
+          "効果",
+          "攻撃・回復"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:quantity",
+        "default": {
+          "mode": "statScale",
+          "stat": "AT",
+          "owner": "self",
+          "factor": 1
+        },
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "attack",
+              "heal"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.modifiedStat",
+        "key": "modifiedStat",
+        "label": "変更する能力",
+        "path": [
+          "効果",
+          "強化・弱体"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:changeStat",
+        "default": "AT",
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "buff",
+              "debuff"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "効果量を計算する参照能力と区別",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.operation",
+        "key": "operation",
+        "label": "増減方式",
+        "path": [
+          "効果",
+          "強化・弱体"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:modify",
+        "default": "delta",
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "buff",
+              "debuff"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.amount.branch2",
+        "key": "amount",
+        "label": "増減量",
+        "path": [
+          "効果",
+          "強化・弱体",
+          "量を増減"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:quantity",
+        "default": {
+          "mode": "fixed"
+        },
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "buff",
+              "debuff"
+            ]
+          },
+          {
+            "field": "operation",
+            "in": [
+              "delta"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.factor",
+        "key": "factor",
+        "label": "変更対象の能力に掛ける倍率",
+        "path": [
+          "効果",
+          "強化・弱体",
+          "倍率"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "buff",
+              "debuff"
+            ]
+          },
+          {
+            "field": "operation",
+            "in": [
+              "multiply"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 0
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "強化1以上／弱体0〜1。基準・重複順は共通規則",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.stateId",
+        "key": "stateId",
+        "label": "付与する状態",
+        "path": [
+          "効果",
+          "状態付与"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "def:state",
+        "default": null,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "status"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.params",
+        "key": "params",
+        "label": "その状態の専用入力",
+        "path": [
+          "効果",
+          "状態付与"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "dynamic:state:stateId",
+        "default": {},
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "status"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "装甲なら軽減量等。汎用のAT倍率欄は出さない",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.duration",
+        "key": "duration",
+        "label": "持続期間",
+        "path": [
+          "効果",
+          "強化・弱体・状態"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:duration",
+        "default": {
+          "mode": "turns",
+          "turns": 2
+        },
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "buff",
+              "debuff",
+              "status"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "この2Tは編集初期値の案。現行毒などの既定期間は定義側を優先",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.removeMask",
+        "key": "removeMask",
+        "label": "解除する種類",
+        "path": [
+          "効果",
+          "解除"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:removeMask",
+        "default": "states",
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "remove"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.removeStateId",
+        "key": "removeStateId",
+        "label": "解除する状態",
+        "path": [
+          "効果",
+          "解除",
+          "指定状態"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "def:state",
+        "default": null,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "remove"
+            ]
+          },
+          {
+            "field": "removeMask",
+            "in": [
+              "oneState"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.movement",
+        "key": "movement",
+        "label": "移動の設定",
+        "path": [
+          "効果",
+          "移動"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:move",
+        "default": null,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "move"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.specialKind",
+        "key": "specialKind",
+        "label": "特殊処理",
+        "path": [
+          "効果",
+          "特殊"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:specialKind",
+        "default": null,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "special"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.chargeTurns",
+        "key": "chargeTurns",
+        "label": "短縮ターン",
+        "path": [
+          "効果",
+          "特殊",
+          "必殺技短縮"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 1,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "special"
+            ]
+          },
+          {
+            "field": "specialKind",
+            "in": [
+              "ultimateCharge"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 1
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.reviveHP",
+        "key": "reviveHP",
+        "label": "復活時HP",
+        "path": [
+          "効果",
+          "特殊",
+          "蘇生"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:quantity",
+        "default": null,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "special"
+            ]
+          },
+          {
+            "field": "specialKind",
+            "in": [
+              "revive"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "対象の生存条件をdeadへ。Core初期不採用",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.terrainId",
+        "key": "terrainId",
+        "label": "変更先地形",
+        "path": [
+          "効果",
+          "特殊",
+          "地形変更"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:terrain",
+        "default": null,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "special"
+            ]
+          },
+          {
+            "field": "specialKind",
+            "in": [
+              "terrain"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.cellDefinitionId",
+        "key": "cellDefinitionId",
+        "label": "マスに残す定義",
+        "path": [
+          "効果",
+          "特殊",
+          "マス効果"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "def:cell",
+        "default": null,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "special"
+            ]
+          },
+          {
+            "field": "specialKind",
+            "in": [
+              "cellEffect"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "移動後もマスに残る。定義追加待ち",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.cells",
+        "key": "cells",
+        "label": "設置マス",
+        "path": [
+          "効果",
+          "特殊",
+          "地形・マス効果"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:area",
+        "default": null,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "special"
+            ]
+          },
+          {
+            "field": "specialKind",
+            "in": [
+              "terrain",
+              "cellEffect"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.fieldDuration",
+        "key": "fieldDuration",
+        "label": "マスに残る期間",
+        "path": [
+          "効果",
+          "特殊",
+          "地形・マス効果"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:duration",
+        "default": null,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "special"
+            ]
+          },
+          {
+            "field": "specialKind",
+            "in": [
+              "terrain",
+              "cellEffect"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "candidate",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.attackCount",
+        "key": "attackCount",
+        "label": "対象固定の攻撃回数",
+        "path": [
+          "効果",
+          "攻撃",
+          "詳細"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 1,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "attack"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 1
+        },
+        "view": "detail",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.pierceArmor",
+        "key": "pierceArmor",
+        "label": "装甲を無視",
+        "path": [
+          "効果",
+          "攻撃",
+          "詳細"
+        ],
+        "widget": "toggle",
+        "type": "boolean",
+        "ref": null,
+        "default": false,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "attack"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "current",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.drainRate",
+        "key": "drainRate",
+        "label": "与ダメージの吸収率",
+        "path": [
+          "効果",
+          "攻撃",
+          "詳細"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": 0,
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "attack"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 0,
+          "unit": "ratio"
+        },
+        "view": "detail",
+        "adoption": "current",
+        "note": "現行は残HP超過分を含む与ダメージを参照",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.attributes",
+        "key": "attributes",
+        "label": "攻撃属性",
+        "path": [
+          "効果",
+          "攻撃",
+          "詳細"
+        ],
+        "widget": "multi",
+        "type": "array",
+        "ref": "enum:attribute",
+        "default": [],
+        "showIf": [
+          {
+            "field": "type",
+            "in": [
+              "attack"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "candidate",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.repetitionCount",
+        "key": "repetitionCount",
+        "label": "対象選びからの繰り返し",
+        "path": [
+          "効果",
+          "詳細"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 1,
+        "showIf": [],
+        "constraints": {
+          "minimum": 1
+        },
+        "view": "detail",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.trigger",
+        "key": "trigger",
+        "label": "この効果だけ時点を変える",
+        "path": [
+          "効果",
+          "詳細"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:trigger",
+        "default": {
+          "event": "inherit"
+        },
+        "showIf": [],
+        "constraints": {
+          "context": {
+            "allowInherit": true
+          }
+        },
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.condition",
+        "key": "condition",
+        "label": "この効果の発動条件",
+        "path": [
+          "効果",
+          "詳細"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:predicate",
+        "default": {
+          "kind": "none"
+        },
+        "showIf": [],
+        "constraints": {
+          "context": {
+            "predicateUse": "activation"
+          }
+        },
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "effect.alternate",
+        "key": "alternate",
+        "label": "条件による量・専用値の変更",
+        "path": [
+          "効果",
+          "詳細"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:alternate",
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "条件成立時に指定パラメータだけ置換。二重発動しない",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "alternate": [
+      {
+        "id": "alternate.condition",
+        "key": "condition",
+        "label": "切替条件",
+        "path": [
+          "条件付き量",
+          "共通"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:predicate",
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "context": {
+            "predicateUse": "activation"
+          }
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "alternate.parameter",
+        "key": "parameter",
+        "label": "変更するパラメータ",
+        "path": [
+          "条件付き量",
+          "共通"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "context:effectParameters",
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "今の効果の数値・量のキーだけ。対象・種類の変更不可",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "alternate.value",
+        "key": "value",
+        "label": "成立時の値",
+        "path": [
+          "条件付き量",
+          "共通"
+        ],
+        "widget": "parameterValue",
+        "type": "number|object",
+        "ref": "dynamicParameter:parameter",
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "選んだパラメータと同じ型・同じ専用入力を使う",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "target": [
+      {
+        "id": "target.mode",
+        "key": "mode",
+        "label": "指定方法",
+        "path": [
+          "対象",
+          "共通"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:targetMode",
+        "default": "area",
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.area",
+        "key": "area",
+        "label": "範囲",
+        "path": [
+          "対象",
+          "範囲内全員・サーチ"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:area",
+        "default": null,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "area",
+              "search"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.source",
+        "key": "source",
+        "label": "参照する対象",
+        "path": [
+          "対象",
+          "自身・行動参照"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:targetSource",
+        "default": "self",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "context"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.filter",
+        "key": "filter",
+        "label": "絞り込み条件",
+        "path": [
+          "対象",
+          "サーチ"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:predicate",
+        "default": {
+          "kind": "none"
+        },
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "search"
+            ]
+          }
+        ],
+        "constraints": {
+          "context": {
+            "predicateUse": "candidate"
+          }
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.pick",
+        "key": "pick",
+        "label": "選び方",
+        "path": [
+          "対象",
+          "サーチ"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:pick",
+        "default": "all",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "search"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.sortStat",
+        "key": "sortStat",
+        "label": "並べる能力",
+        "path": [
+          "対象",
+          "サーチ",
+          "順位指定"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:stat",
+        "default": "currentHP",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "search"
+            ]
+          },
+          {
+            "field": "pick",
+            "in": [
+              "rank"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.direction",
+        "key": "direction",
+        "label": "並び順",
+        "path": [
+          "対象",
+          "サーチ",
+          "順位指定"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:direction",
+        "default": "asc",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "search"
+            ]
+          },
+          {
+            "field": "pick",
+            "in": [
+              "rank"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.count",
+        "key": "count",
+        "label": "異なる対象を選ぶ数",
+        "path": [
+          "対象",
+          "サーチ",
+          "順位指定"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 1,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "search"
+            ]
+          },
+          {
+            "field": "pick",
+            "in": [
+              "rank"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 1,
+          "maximum": 18
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.side",
+        "key": "side",
+        "label": "陣営",
+        "path": [
+          "対象",
+          "サーチ",
+          "詳細"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:side",
+        "default": "both",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "search"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.life",
+        "key": "life",
+        "label": "生存区分",
+        "path": [
+          "対象",
+          "サーチ",
+          "詳細"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:life",
+        "default": "alive",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "search"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.self",
+        "key": "self",
+        "label": "自身の扱い",
+        "path": [
+          "対象",
+          "サーチ",
+          "詳細"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:self",
+        "default": "include",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "search"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.ties",
+        "key": "ties",
+        "label": "同値",
+        "path": [
+          "対象",
+          "サーチ",
+          "詳細"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:ties",
+        "default": "position",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "search"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "target.absence",
+        "key": "absence",
+        "label": "対象なし・無効時",
+        "path": [
+          "対象",
+          "サーチ",
+          "詳細"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:absence",
+        "default": "skip",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "search"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "adopted",
+        "note": "",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "area": [
+      {
+        "id": "area.basis",
+        "key": "basis",
+        "label": "絶対／相対",
+        "path": [
+          "範囲",
+          "マス"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:basis",
+        "default": "absolute",
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "area.ally",
+        "key": "ally",
+        "label": "味方3×3",
+        "path": [
+          "範囲",
+          "マス"
+        ],
+        "widget": "grid",
+        "type": "array",
+        "ref": null,
+        "default": [],
+        "showIf": [],
+        "constraints": {
+          "items": "integer",
+          "minimum": 0,
+          "maximum": 8,
+          "uniqueItems": true
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "area.enemy",
+        "key": "enemy",
+        "label": "敵3×3",
+        "path": [
+          "範囲",
+          "マス"
+        ],
+        "widget": "grid",
+        "type": "array",
+        "ref": null,
+        "default": [],
+        "showIf": [],
+        "constraints": {
+          "items": "integer",
+          "minimum": 0,
+          "maximum": 8,
+          "uniqueItems": true
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "quantity": [
+      {
+        "id": "quantity.mode",
+        "key": "mode",
+        "label": "量の方式",
+        "path": [
+          "量",
+          "共通"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:amountMode",
+        "default": "fixed",
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "quantity.value",
+        "key": "value",
+        "label": "数値",
+        "path": [
+          "量",
+          "固定値"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "fixed"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 0
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "quantity.stat",
+        "key": "stat",
+        "label": "参照能力",
+        "path": [
+          "量",
+          "能力参照"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:referenceStat",
+        "default": "AT",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "statScale"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "quantity.factor",
+        "key": "factor",
+        "label": "倍率",
+        "path": [
+          "量",
+          "能力参照"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": 1,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "statScale"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 0,
+          "unit": "ratio"
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "quantity.owner",
+        "key": "owner",
+        "label": "誰の能力か",
+        "path": [
+          "量",
+          "能力参照",
+          "詳細"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:owner",
+        "default": "self",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "statScale"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "状態発動では付与元・保持者を区別",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "quantity.countTarget",
+        "key": "countTarget",
+        "label": "数える対象",
+        "path": [
+          "量",
+          "該当数参照"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:target",
+        "default": null,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "countScale"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "quantity.base",
+        "key": "base",
+        "label": "基礎値",
+        "path": [
+          "量",
+          "該当数参照"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": 0,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "countScale"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "quantity.perUnit",
+        "key": "perUnit",
+        "label": "1体ごとの増分",
+        "path": [
+          "量",
+          "該当数参照"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "countScale"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "duration": [
+      {
+        "id": "duration.mode",
+        "key": "mode",
+        "label": "指定T／常時",
+        "path": [
+          "期間",
+          "共通"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:duration",
+        "default": "turns",
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "duration.turns",
+        "key": "turns",
+        "label": "持続ターン数",
+        "path": [
+          "期間",
+          "指定ターン"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 2,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "turns"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 1
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "trigger": [
+      {
+        "id": "trigger.event",
+        "key": "event",
+        "label": "発動イベント",
+        "path": [
+          "時点",
+          "効果の例外"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:event",
+        "default": "inherit",
+        "showIf": [
+          {
+            "field": "$allowInherit",
+            "in": [
+              true
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "trigger.event.branch2",
+        "key": "event",
+        "label": "発動イベント（必須）",
+        "path": [
+          "時点",
+          "最上位"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:eventTop",
+        "default": null,
+        "showIf": [
+          {
+            "field": "$allowInherit",
+            "in": [
+              false
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "trigger.turn",
+        "key": "turn",
+        "label": "何ターン目",
+        "path": [
+          "時点",
+          "指定ターン"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": null,
+        "showIf": [
+          {
+            "field": "event",
+            "in": [
+              "turnElapsed"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 1
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "trigger.subject",
+        "key": "subject",
+        "label": "イベントの主体",
+        "path": [
+          "時点",
+          "詳細"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:eventSubject",
+        "default": "self",
+        "showIf": [],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "自身が標準。全体イベントへの拡張は規則定義待ち",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "trigger.maxPerBattle",
+        "key": "maxPerBattle",
+        "label": "1戦の発動上限",
+        "path": [
+          "時点",
+          "詳細"
+        ],
+        "widget": "number",
+        "type": "integer|null",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {
+          "minimum": 1
+        },
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "null＝上限なし。初回のみは1",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "predicate": [
+      {
+        "id": "predicate.kind",
+        "key": "kind",
+        "label": "条件種類",
+        "path": [
+          "条件",
+          "共通"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:predicateKind",
+        "default": "none",
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.subject",
+        "key": "subject",
+        "label": "判定する対象",
+        "path": [
+          "条件",
+          "発動条件用"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:owner",
+        "default": "self",
+        "showIf": [
+          {
+            "field": "$predicateUse",
+            "in": [
+              "activation"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "サーチ内は候補カード固定。発動条件だけ指定",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.stat",
+        "key": "stat",
+        "label": "能力",
+        "path": [
+          "条件",
+          "ステータス"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:stat",
+        "default": "currentHP",
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "stat"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.operator",
+        "key": "operator",
+        "label": "比較",
+        "path": [
+          "条件",
+          "数値比較"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:compare",
+        "default": "gte",
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "stat",
+              "turn",
+              "count"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.valueBasis",
+        "key": "valueBasis",
+        "label": "閾値の単位",
+        "path": [
+          "条件",
+          "ステータス",
+          "詳細"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:valueBasis",
+        "default": "absolute",
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "stat"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "割合は0〜1。HP割合と初期値比は別",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.value",
+        "key": "value",
+        "label": "閾値",
+        "path": [
+          "条件",
+          "数値比較"
+        ],
+        "widget": "number",
+        "type": "number",
+        "ref": null,
+        "default": null,
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "stat",
+              "turn",
+              "count"
+            ]
+          },
+          {
+            "field": "operator",
+            "in": [
+              "gte",
+              "lte",
+              "gt",
+              "lt",
+              "eq",
+              "ne"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "HP割合と初期値比は0〜1。それ以外は能力値・T・体数",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.tagKind",
+        "key": "tagKind",
+        "label": "種類",
+        "path": [
+          "条件",
+          "状態・分類等"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:tagKind",
+        "default": "state",
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "tag"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.tagId",
+        "key": "tagId",
+        "label": "照合ID",
+        "path": [
+          "条件",
+          "状態・分類等"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "dynamicChoice:tagKind",
+        "default": null,
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "tag"
+            ]
+          },
+          {
+            "field": "tagKind",
+            "in": [
+              "state",
+              "trait",
+              "class",
+              "terrain",
+              "preferredTerrain"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "状態／特性／分類／地形の定義を参照",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.match",
+        "key": "match",
+        "label": "該当／非該当",
+        "path": [
+          "条件",
+          "状態・分類等"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:match",
+        "default": "has",
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "tag"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.order",
+        "key": "order",
+        "label": "直前／直後",
+        "path": [
+          "条件",
+          "行動順"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:order",
+        "default": "previous",
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "order"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.queue",
+        "key": "queue",
+        "label": "どのキューか",
+        "path": [
+          "条件",
+          "行動順"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:queue",
+        "default": "all",
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "order"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.distance",
+        "key": "distance",
+        "label": "何番前・後か",
+        "path": [
+          "条件",
+          "行動順",
+          "互換詳細"
+        ],
+        "widget": "number",
+        "type": "integer",
+        "ref": null,
+        "default": 1,
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "order"
+            ]
+          }
+        ],
+        "constraints": {
+          "minimum": 1
+        },
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "原案の1固定は未採用。新規は1を既定にする",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.countTarget",
+        "key": "countTarget",
+        "label": "数える範囲と条件",
+        "path": [
+          "条件",
+          "該当数"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:target",
+        "default": null,
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "count"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.op",
+        "key": "op",
+        "label": "AND／OR／NOT OR",
+        "path": [
+          "条件",
+          "複合条件",
+          "詳細"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:logic",
+        "default": "all",
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "group"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "predicate.items",
+        "key": "items",
+        "label": "子条件",
+        "path": [
+          "条件",
+          "複合条件",
+          "詳細"
+        ],
+        "widget": "list",
+        "type": "array",
+        "ref": "form:predicate",
+        "default": [],
+        "showIf": [
+          {
+            "field": "kind",
+            "in": [
+              "group"
+            ]
+          }
+        ],
+        "constraints": {
+          "maxTotalNodes": 40,
+          "maxDepth": 5
+        },
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "通常は単条件。既存複合条件は保持",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "move": [
+      {
+        "id": "move.mode",
+        "key": "mode",
+        "label": "移動方式",
+        "path": [
+          "移動",
+          "共通"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:moveMode",
+        "default": "absolute",
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "move.destination",
+        "key": "destination",
+        "label": "移動先",
+        "path": [
+          "移動",
+          "指定マス"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:area",
+        "default": null,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "absolute",
+              "relative"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "move.swapTarget",
+        "key": "swapTarget",
+        "label": "交換相手",
+        "path": [
+          "移動",
+          "交換"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:target",
+        "default": null,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "swap"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "move.occupied",
+        "key": "occupied",
+        "label": "移動先にカードがいる場合",
+        "path": [
+          "移動",
+          "詳細"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:occupied",
+        "default": "fail",
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "absolute",
+              "relative"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "detail",
+        "adoption": "proposal",
+        "note": "同時競合等は共通規則で一度定義",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "trait": [
+      {
+        "id": "trait.definitionId",
+        "key": "definitionId",
+        "label": "登録済み特性",
+        "path": [
+          "特性",
+          "共通"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "def:trait",
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "trait.params",
+        "key": "params",
+        "label": "公開された数値だけ",
+        "path": [
+          "特性",
+          "選んだ特性"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "dynamic:trait:definitionId",
+        "default": {},
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "入力のない特性は選択だけで完了",
+        "source": "今回の入力形式案"
+      }
+    ],
+    "definition": [
+      {
+        "id": "definition.category",
+        "key": "category",
+        "label": "種類",
+        "path": [
+          "DB編集",
+          "新しい共通定義"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:definitionKind",
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "definition.id",
+        "key": "id",
+        "label": "固定ID",
+        "path": [
+          "DB編集",
+          "新しい共通定義"
+        ],
+        "widget": "text",
+        "type": "string",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "意味変更は新ID/新バージョン",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "definition.label",
+        "key": "label",
+        "label": "表示名",
+        "path": [
+          "DB編集",
+          "新しい共通定義"
+        ],
+        "widget": "text",
+        "type": "string",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "definition.mode",
+        "key": "mode",
+        "label": "組合せ／処理参照",
+        "path": [
+          "DB編集",
+          "新しい共通定義"
+        ],
+        "widget": "select",
+        "type": "string",
+        "ref": "enum:definitionMode",
+        "default": "compose",
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "definition.trigger",
+        "key": "trigger",
+        "label": "発動時点",
+        "path": [
+          "DB編集",
+          "組合せ"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:trigger",
+        "default": null,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "compose"
+            ]
+          }
+        ],
+        "constraints": {
+          "context": {
+            "allowInherit": false
+          }
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "definition.condition",
+        "key": "condition",
+        "label": "発動条件",
+        "path": [
+          "DB編集",
+          "組合せ"
+        ],
+        "widget": "form",
+        "type": "object",
+        "ref": "form:predicate",
+        "default": {
+          "kind": "none"
+        },
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "compose"
+            ]
+          }
+        ],
+        "constraints": {
+          "context": {
+            "predicateUse": "activation"
+          }
+        },
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "definition.effects",
+        "key": "effects",
+        "label": "対象と効果",
+        "path": [
+          "DB編集",
+          "組合せ"
+        ],
+        "widget": "list",
+        "type": "array",
+        "ref": "form:effect",
+        "default": [],
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "compose"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "definition.handlerId",
+        "key": "handlerId",
+        "label": "登録済み処理ID",
+        "path": [
+          "DB編集",
+          "処理参照"
+        ],
+        "widget": "text",
+        "type": "string",
+        "ref": null,
+        "default": null,
+        "showIf": [
+          {
+            "field": "mode",
+            "in": [
+              "handler"
+            ]
+          }
+        ],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "任意のJSコードをセルで実行しない",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "definition.formId",
+        "key": "formId",
+        "label": "カードに見せるフォーム",
+        "path": [
+          "DB編集",
+          "公開パラメータ"
+        ],
+        "widget": "text",
+        "type": "string",
+        "ref": null,
+        "default": null,
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "01入力ツリーのform_id。空フォームなら数値入力不要",
+        "source": "今回の入力形式案"
+      },
+      {
+        "id": "definition.rules",
+        "key": "rules",
+        "label": "計算・重複・失効等",
+        "path": [
+          "DB編集",
+          "共通規則"
+        ],
+        "widget": "json",
+        "type": "object",
+        "ref": null,
+        "default": {},
+        "showIf": [],
+        "constraints": {},
+        "view": "basic",
+        "adoption": "proposal",
+        "note": "04共通規則と定義のrules_json。未決はblockers_jsonへ",
+        "source": "今回の入力形式案"
+      }
+    ]
+  },
+  "enums": {
+    "rarity": [
+      {
+        "id": "C",
+        "label": "C",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "R",
+        "label": "R",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "SR",
+        "label": "SR",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "UR",
+        "label": "UR",
+        "order": 4,
+        "adoption": "proposal"
+      }
+    ],
+    "effectType": [
+      {
+        "id": "attack",
+        "label": "攻撃",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "heal",
+        "label": "回復",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "buff",
+        "label": "強化",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "debuff",
+        "label": "弱体",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "status",
+        "label": "状態付与",
+        "order": 5,
+        "adoption": "proposal"
+      },
+      {
+        "id": "remove",
+        "label": "解除",
+        "order": 6,
+        "adoption": "proposal"
+      },
+      {
+        "id": "move",
+        "label": "移動",
+        "order": 7,
+        "adoption": "proposal"
+      },
+      {
+        "id": "special",
+        "label": "特殊",
+        "order": 8,
+        "adoption": "proposal"
+      }
+    ],
+    "specialKind": [
+      {
+        "id": "ultimateCharge",
+        "label": "必殺技短縮",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "instantKill",
+        "label": "即死",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "revive",
+        "label": "蘇生",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "terrain",
+        "label": "地形変更",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "cellEffect",
+        "label": "マス効果",
+        "order": 5,
+        "adoption": "proposal"
+      }
+    ],
+    "slot": [
+      {
+        "id": "front",
+        "label": "前衛",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "middle",
+        "label": "中衛",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "rear",
+        "label": "後衛",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "ultimate",
+        "label": "必殺技",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "alpha",
+        "label": "αスキル",
+        "order": 5,
+        "adoption": "proposal"
+      }
+    ],
+    "skillMode": [
+      {
+        "id": "none",
+        "label": "なし",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "custom",
+        "label": "効果を組み立てる",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "preset",
+        "label": "登録済みから選ぶ",
+        "order": 3,
+        "adoption": "proposal"
+      }
+    ],
+    "skillSimple": [
+      {
+        "id": "none",
+        "label": "なし",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "custom",
+        "label": "効果を組み立てる",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "targetMode": [
+      {
+        "id": "area",
+        "label": "範囲内すべて",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "search",
+        "label": "サーチ",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "context",
+        "label": "自身・行動参照",
+        "order": 3,
+        "adoption": "proposal"
+      }
+    ],
+    "targetSource": [
+      {
+        "id": "self",
+        "label": "自身",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "attackSource",
+        "label": "自身を攻撃してきた相手",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "attackTarget",
+        "label": "自身が攻撃した相手",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "effectSource",
+        "label": "発動契機となった効果の発生元",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "previousEffectTarget",
+        "label": "この行動の直前の効果の対象",
+        "order": 5,
+        "adoption": "proposal"
+      }
+    ],
+    "basis": [
+      {
+        "id": "absolute",
+        "label": "絶対範囲",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "relative",
+        "label": "相対範囲",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "side": [
+      {
+        "id": "ally",
+        "label": "味方",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "enemy",
+        "label": "敵",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "both",
+        "label": "両陣営",
+        "order": 3,
+        "adoption": "proposal"
+      }
+    ],
+    "pick": [
+      {
+        "id": "all",
+        "label": "条件に合う全員",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "rank",
+        "label": "ステータス順に指定数",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "stat": [
+      {
+        "id": "currentHP",
+        "label": "残HP",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "hpRatio",
+        "label": "HP割合",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "maxHP",
+        "label": "最大HP",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "AT",
+        "label": "AT",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "AG",
+        "label": "AG",
+        "order": 5,
+        "adoption": "proposal"
+      },
+      {
+        "id": "armor",
+        "label": "装甲",
+        "order": 6,
+        "adoption": "proposal"
+      },
+      {
+        "id": "cost",
+        "label": "コスト（既存互換）",
+        "order": 1,
+        "adoption": "compat"
+      },
+      {
+        "id": "alphaCost",
+        "label": "αコスト（既存互換）",
+        "order": 2,
+        "adoption": "compat"
+      }
+    ],
+    "changeStat": [
+      {
+        "id": "AT",
+        "label": "AT",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "AG",
+        "label": "AG",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "maxHP",
+        "label": "最大HP",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "currentHP",
+        "label": "現在HP",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "armor",
+        "label": "装甲",
+        "order": 5,
+        "adoption": "proposal"
+      }
+    ],
+    "referenceStat": [
+      {
+        "id": "AT",
+        "label": "AT",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "AG",
+        "label": "AG",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "currentHP",
+        "label": "現在HP",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "maxHP",
+        "label": "最大HP",
+        "order": 4,
+        "adoption": "proposal"
+      }
+    ],
+    "direction": [
+      {
+        "id": "asc",
+        "label": "低い順",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "desc",
+        "label": "高い順",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "life": [
+      {
+        "id": "alive",
+        "label": "生存",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "dead",
+        "label": "戦闘不能",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "any",
+        "label": "不問",
+        "order": 3,
+        "adoption": "proposal"
+      }
+    ],
+    "self": [
+      {
+        "id": "include",
+        "label": "自身を含む",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "exclude",
+        "label": "自身を除く",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "only",
+        "label": "自身のみ",
+        "order": 3,
+        "adoption": "proposal"
+      }
+    ],
+    "ties": [
+      {
+        "id": "position",
+        "label": "位置順で人数を絞る",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "includeBoundary",
+        "label": "境界の同値を全員含む",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "absence": [
+      {
+        "id": "skip",
+        "label": "その回は不発",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "stopEffect",
+        "label": "その効果の残りを打ち切る",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "amountMode": [
+      {
+        "id": "fixed",
+        "label": "固定値",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "statScale",
+        "label": "能力×倍率",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "countScale",
+        "label": "基礎値＋該当数×増分",
+        "order": 3,
+        "adoption": "proposal"
+      }
+    ],
+    "owner": [
+      {
+        "id": "self",
+        "label": "実行者",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "target",
+        "label": "今回の効果対象",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "applier",
+        "label": "状態付与元",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "holder",
+        "label": "状態保持者",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "attacker",
+        "label": "今回の攻撃者",
+        "order": 5,
+        "adoption": "proposal"
+      }
+    ],
+    "duration": [
+      {
+        "id": "turns",
+        "label": "指定ターン",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "always",
+        "label": "常時",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "modify": [
+      {
+        "id": "delta",
+        "label": "量を増減",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "multiply",
+        "label": "変更対象の能力に倍率",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "removeMask": [
+      {
+        "id": "states",
+        "label": "全状態",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "oneState",
+        "label": "指定状態",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "buffs",
+        "label": "能力強化",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "debuffs",
+        "label": "能力弱体",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "statChanges",
+        "label": "能力変化すべて",
+        "order": 5,
+        "adoption": "proposal"
+      },
+      {
+        "id": "all",
+        "label": "状態＋能力変化",
+        "order": 6,
+        "adoption": "proposal"
+      }
+    ],
+    "moveMode": [
+      {
+        "id": "absolute",
+        "label": "指定マスへ",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "relative",
+        "label": "相対移動",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "swap",
+        "label": "対象と交換",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "forward",
+        "label": "前詰め",
+        "order": 4,
+        "adoption": "proposal"
+      }
+    ],
+    "occupied": [
+      {
+        "id": "fail",
+        "label": "移動不発",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "swap",
+        "label": "占有者と交換",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "predicateKind": [
+      {
+        "id": "none",
+        "label": "条件なし",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "stat",
+        "label": "ステータス比較",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "tag",
+        "label": "状態・分類等",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "order",
+        "label": "前後の行動順",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "turn",
+        "label": "経過ターン",
+        "order": 5,
+        "adoption": "proposal"
+      },
+      {
+        "id": "count",
+        "label": "該当カード数",
+        "order": 6,
+        "adoption": "proposal"
+      },
+      {
+        "id": "group",
+        "label": "複合条件",
+        "order": 7,
+        "adoption": "proposal"
+      }
+    ],
+    "compare": [
+      {
+        "id": "gte",
+        "label": "以上",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "lte",
+        "label": "以下",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "gt",
+        "label": "超",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "lt",
+        "label": "未満",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "eq",
+        "label": "等しい",
+        "order": 5,
+        "adoption": "proposal"
+      },
+      {
+        "id": "ne",
+        "label": "異なる",
+        "order": 6,
+        "adoption": "proposal"
+      },
+      {
+        "id": "max",
+        "label": "最高値（同率すべて）",
+        "order": 7,
+        "adoption": "proposal"
+      },
+      {
+        "id": "min",
+        "label": "最低値（同率すべて）",
+        "order": 8,
+        "adoption": "proposal"
+      }
+    ],
+    "valueBasis": [
+      {
+        "id": "absolute",
+        "label": "数値",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "initialRatio",
+        "label": "初期値に対する割合",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "eventSubject": [
+      {
+        "id": "self",
+        "label": "自身",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "ally",
+        "label": "味方",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "enemy",
+        "label": "敵",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "any",
+        "label": "いずれか",
+        "order": 4,
+        "adoption": "proposal"
+      }
+    ],
+    "tagKind": [
+      {
+        "id": "state",
+        "label": "状態",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "trait",
+        "label": "特性",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "class",
+        "label": "分類",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "terrain",
+        "label": "現在地形",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "preferredTerrain",
+        "label": "得意地形",
+        "order": 5,
+        "adoption": "proposal"
+      },
+      {
+        "id": "onPreferredTerrain",
+        "label": "得意地形上",
+        "order": 6,
+        "adoption": "proposal"
+      },
+      {
+        "id": "alpha",
+        "label": "α指定",
+        "order": 7,
+        "adoption": "proposal"
+      }
+    ],
+    "match": [
+      {
+        "id": "has",
+        "label": "該当",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "not",
+        "label": "非該当",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "order": [
+      {
+        "id": "previous",
+        "label": "直前に行動した",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "next",
+        "label": "直後に行動する",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "queue": [
+      {
+        "id": "all",
+        "label": "全体キュー",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "ally",
+        "label": "味方キュー",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "enemy",
+        "label": "敵キュー",
+        "order": 3,
+        "adoption": "proposal"
+      }
+    ],
+    "logic": [
+      {
+        "id": "all",
+        "label": "すべて AND",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "any",
+        "label": "いずれか OR",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "none",
+        "label": "いずれも満たさない NOT OR",
+        "order": 3,
+        "adoption": "proposal"
+      }
+    ],
+    "event": [
+      {
+        "id": "inherit",
+        "label": "枠の時点を継承",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "battleStart",
+        "label": "戦闘開始",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "turnStart",
+        "label": "ターン開始",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "turnEnd",
+        "label": "ターン終了",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "turnElapsed",
+        "label": "指定ターン",
+        "order": 5,
+        "adoption": "proposal"
+      },
+      {
+        "id": "beforeAttack",
+        "label": "攻撃直前",
+        "order": 6,
+        "adoption": "proposal"
+      },
+      {
+        "id": "afterAttack",
+        "label": "攻撃直後",
+        "order": 7,
+        "adoption": "proposal"
+      },
+      {
+        "id": "afterAttacked",
+        "label": "被攻撃直後",
+        "order": 8,
+        "adoption": "proposal"
+      },
+      {
+        "id": "afterDamaged",
+        "label": "HP損失直後",
+        "order": 9,
+        "adoption": "proposal"
+      },
+      {
+        "id": "onKill",
+        "label": "撃破時",
+        "order": 10,
+        "adoption": "proposal"
+      },
+      {
+        "id": "onDeath",
+        "label": "戦闘不能時",
+        "order": 11,
+        "adoption": "proposal"
+      },
+      {
+        "id": "afterMove",
+        "label": "移動後",
+        "order": 12,
+        "adoption": "proposal"
+      }
+    ],
+    "attribute": [
+      {
+        "id": "physical",
+        "label": "物理",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "electric",
+        "label": "電撃",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "acid",
+        "label": "酸",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "poison",
+        "label": "毒",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "heat",
+        "label": "熱",
+        "order": 5,
+        "adoption": "proposal"
+      },
+      {
+        "id": "spore",
+        "label": "胞子",
+        "order": 6,
+        "adoption": "proposal"
+      },
+      {
+        "id": "crystalEnergy",
+        "label": "結晶エネルギー",
+        "order": 7,
+        "adoption": "proposal"
+      }
+    ],
+    "definitionKind": [
+      {
+        "id": "state",
+        "label": "状態",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "trait",
+        "label": "特性",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "alpha",
+        "label": "αスキル",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "cell",
+        "label": "マス効果",
+        "order": 4,
+        "adoption": "proposal"
+      }
+    ],
+    "definitionMode": [
+      {
+        "id": "compose",
+        "label": "既存効果の組合せ",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "handler",
+        "label": "登録済み処理を参照",
+        "order": 2,
+        "adoption": "proposal"
+      }
+    ],
+    "class": [
+      {
+        "id": "fish",
+        "label": "魚類",
+        "order": 1,
+        "adoption": "adopted"
+      },
+      {
+        "id": "amphibian",
+        "label": "両生類",
+        "order": 2,
+        "adoption": "adopted"
+      },
+      {
+        "id": "reptile",
+        "label": "爬虫類",
+        "order": 3,
+        "adoption": "adopted"
+      },
+      {
+        "id": "bird",
+        "label": "鳥類",
+        "order": 4,
+        "adoption": "adopted"
+      },
+      {
+        "id": "mammal",
+        "label": "哺乳類",
+        "order": 5,
+        "adoption": "adopted"
+      },
+      {
+        "id": "crustacean",
+        "label": "甲殻類",
+        "order": 6,
+        "adoption": "adopted"
+      },
+      {
+        "id": "insect",
+        "label": "昆虫類",
+        "order": 7,
+        "adoption": "adopted"
+      },
+      {
+        "id": "plant",
+        "label": "植物",
+        "order": 8,
+        "adoption": "adopted"
+      },
+      {
+        "id": "fungi",
+        "label": "菌類",
+        "order": 9,
+        "adoption": "adopted"
+      },
+      {
+        "id": "dragon",
+        "label": "竜類",
+        "order": 10,
+        "adoption": "adopted"
+      },
+      {
+        "id": "inorganicLife",
+        "label": "無機生命",
+        "order": 11,
+        "adoption": "adopted"
+      },
+      {
+        "id": "phantomBeast",
+        "label": "幻獣",
+        "order": 12,
+        "adoption": "adopted"
+      },
+      {
+        "id": "mollusk",
+        "label": "軟体類",
+        "order": 13,
+        "adoption": "adopted"
+      }
+    ],
+    "legacyClass": [
+      {
+        "id": "crystalLife",
+        "label": "結晶生命（旧分類）",
+        "order": 1,
+        "adoption": "compat"
+      }
+    ],
+    "eventTop": [
+      {
+        "id": "battleStart",
+        "label": "戦闘開始",
+        "order": 1,
+        "adoption": "proposal"
+      },
+      {
+        "id": "turnStart",
+        "label": "ターン開始",
+        "order": 2,
+        "adoption": "proposal"
+      },
+      {
+        "id": "turnEnd",
+        "label": "ターン終了",
+        "order": 3,
+        "adoption": "proposal"
+      },
+      {
+        "id": "turnElapsed",
+        "label": "指定ターン",
+        "order": 4,
+        "adoption": "proposal"
+      },
+      {
+        "id": "beforeAttack",
+        "label": "攻撃直前",
+        "order": 5,
+        "adoption": "proposal"
+      },
+      {
+        "id": "afterAttack",
+        "label": "攻撃直後",
+        "order": 6,
+        "adoption": "proposal"
+      },
+      {
+        "id": "afterAttacked",
+        "label": "被攻撃直後",
+        "order": 7,
+        "adoption": "proposal"
+      },
+      {
+        "id": "afterDamaged",
+        "label": "HP損失直後",
+        "order": 8,
+        "adoption": "proposal"
+      },
+      {
+        "id": "onKill",
+        "label": "撃破時",
+        "order": 9,
+        "adoption": "proposal"
+      },
+      {
+        "id": "onDeath",
+        "label": "戦闘不能時",
+        "order": 10,
+        "adoption": "proposal"
+      },
+      {
+        "id": "afterMove",
+        "label": "移動後",
+        "order": 11,
+        "adoption": "proposal"
+      }
+    ],
+    "terrain": [
+      {
+        "id": "plain",
+        "label": "平地",
+        "order": 1,
+        "adoption": "current"
+      },
+      {
+        "id": "forest",
+        "label": "森",
+        "order": 2,
+        "adoption": "current"
+      },
+      {
+        "id": "sea",
+        "label": "海",
+        "order": 3,
+        "adoption": "current"
+      },
+      {
+        "id": "highland",
+        "label": "高地",
+        "order": 4,
+        "adoption": "current"
+      },
+      {
+        "id": "shrine",
+        "label": "活性巣",
+        "order": 5,
+        "adoption": "current"
+      },
+      {
+        "id": "rampart",
+        "label": "殻壁",
+        "order": 6,
+        "adoption": "current"
+      },
+      {
+        "id": "rockyMountain",
+        "label": "岩山",
+        "order": 1,
+        "adoption": "candidate"
+      },
+      {
+        "id": "desert",
+        "label": "砂漠",
+        "order": 1,
+        "adoption": "candidate"
+      },
+      {
+        "id": "volcano",
+        "label": "火山",
+        "order": 1,
+        "adoption": "candidate"
+      },
+      {
+        "id": "polar",
+        "label": "極地",
+        "order": 1,
+        "adoption": "candidate"
+      }
+    ]
+  },
+  "definitions": {
+    "state": {
+      "poison": {
+        "id": "poison",
+        "label": "毒（現行）",
+        "formId": "state.poison",
+        "adoption": "current",
+        "runtime": "existing_behavior",
+        "handlerId": "state.poison",
+        "rules": {
+          "event": "turnStart",
+          "stack": "unique",
+          "refresh": "longest",
+          "duration": 3,
+          "clear": [
+            "all",
+            "weak",
+            "dot"
+          ]
+        },
+        "blockers": [
+          "formAdapter",
+          "variableParameterBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "poisonEnd": {
+        "id": "poisonEnd",
+        "label": "毒（終了時案）",
+        "formId": "state.poisonEnd",
+        "adoption": "candidate",
+        "runtime": "not_connected",
+        "handlerId": "state.poisonEnd",
+        "rules": {
+          "event": "turnEnd"
+        },
+        "blockers": [
+          "stack",
+          "expiry",
+          "rounding"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "regen": {
+        "id": "regen",
+        "label": "継続回復（開始時予約）",
+        "formId": "state.regen",
+        "adoption": "candidate",
+        "runtime": "reserved",
+        "handlerId": "state.regen",
+        "rules": {
+          "event": "turnStart",
+          "stack": "strongest",
+          "refresh": "longest",
+          "blockedBy": [
+            "healBlock"
+          ]
+        },
+        "blockers": [
+          "expiry",
+          "rounding"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "regenEnd": {
+        "id": "regenEnd",
+        "label": "継続回復（終了時案）",
+        "formId": "state.regenEnd",
+        "adoption": "candidate",
+        "runtime": "not_connected",
+        "handlerId": "state.regenEnd",
+        "rules": {
+          "event": "turnEnd"
+        },
+        "blockers": [
+          "stack",
+          "expiry",
+          "rounding"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "armorFlat": {
+        "id": "armorFlat",
+        "label": "装甲（固定軽減）",
+        "formId": "state.armorFlat",
+        "adoption": "current",
+        "runtime": "existing_behavior",
+        "handlerId": "state.armorFlat",
+        "rules": {
+          "event": "beforeDamage",
+          "consumable": false,
+          "stack": "add",
+          "duration": 2
+        },
+        "blockers": [
+          "formAdapter",
+          "variableParameterBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "armorRatio": {
+        "id": "armorRatio",
+        "label": "装甲（被ダメ倍率案）",
+        "formId": "state.armorRatio",
+        "adoption": "candidate",
+        "runtime": "not_connected",
+        "handlerId": "state.armorRatio",
+        "rules": {
+          "event": "beforeDamage",
+          "domain": {
+            "min": 0,
+            "maxExclusive": 1
+          }
+        },
+        "blockers": [
+          "damageStage",
+          "stack",
+          "minimumDamage",
+          "expiry"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "defenseDown": {
+        "id": "defenseDown",
+        "label": "防御低下（固定加算）",
+        "formId": "state.defenseDown",
+        "adoption": "current",
+        "runtime": "existing_behavior",
+        "handlerId": "state.defenseDown",
+        "rules": {
+          "event": "beforeDamage",
+          "stack": "unique",
+          "refresh": "longest",
+          "duration": 1
+        },
+        "blockers": [
+          "formAdapter",
+          "variableParameterBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "wound": {
+        "id": "wound",
+        "label": "裂傷（被ダメ倍率案）",
+        "formId": "state.wound",
+        "adoption": "candidate",
+        "runtime": "not_connected",
+        "handlerId": "state.wound",
+        "rules": {
+          "event": "beforeDamage",
+          "domain": {
+            "minExclusive": 1
+          }
+        },
+        "blockers": [
+          "damageStage",
+          "stack",
+          "expiry"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "reflectShell": {
+        "id": "reflectShell",
+        "label": "反射殻（現行）",
+        "formId": "state.reflectShell",
+        "adoption": "current",
+        "runtime": "existing_behavior",
+        "handlerId": "state.reflectShell",
+        "rules": {
+          "event": "afterDamaged",
+          "basis": "actualHpLoss",
+          "round": "floor",
+          "min": 1,
+          "requires": [
+            "attackerAlive",
+            "holderAlive",
+            "actualHpLossPositive"
+          ],
+          "recursive": false,
+          "preventOriginal": false,
+          "duration": 2
+        },
+        "blockers": [
+          "formAdapter",
+          "variableParameterBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "reflectPrevent": {
+        "id": "reflectPrevent",
+        "label": "反射（無傷案）",
+        "formId": "state.reflectPrevent",
+        "adoption": "candidate",
+        "runtime": "not_connected",
+        "handlerId": "state.reflectPrevent",
+        "rules": {
+          "preventOriginal": true
+        },
+        "blockers": [
+          "damageStage",
+          "death",
+          "chain",
+          "stack",
+          "expiry"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "counter": {
+        "id": "counter",
+        "label": "反撃",
+        "formId": "state.counter",
+        "adoption": "candidate",
+        "runtime": "not_connected",
+        "handlerId": "state.counter",
+        "rules": {
+          "target": "attacker",
+          "basis": "holder.AT",
+          "preventOriginal": false
+        },
+        "blockers": [
+          "event",
+          "death",
+          "chain",
+          "stack",
+          "expiry"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "contactPoison": {
+        "id": "contactPoison",
+        "label": "接触毒",
+        "formId": "state.contactPoison",
+        "adoption": "current",
+        "runtime": "existing_behavior",
+        "handlerId": "state.contactPoison",
+        "rules": {
+          "event": "afterDamaged",
+          "target": "attacker",
+          "state": "poison",
+          "stack": "unique",
+          "refresh": "replace",
+          "duration": 2
+        },
+        "blockers": [
+          "formAdapter",
+          "variableParameterBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "healBlock": {
+        "id": "healBlock",
+        "label": "回復封じ",
+        "formId": "state.healBlock",
+        "adoption": "current",
+        "runtime": "existing_behavior",
+        "handlerId": "state.healBlock",
+        "rules": {
+          "event": "beforeHeal",
+          "duration": 1,
+          "stack": "unique",
+          "refresh": "longest"
+        },
+        "blockers": [
+          "formAdapter"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "actionDisable": {
+        "id": "actionDisable",
+        "label": "行動不能",
+        "formId": "state.actionDisable",
+        "adoption": "candidate",
+        "runtime": "not_connected",
+        "handlerId": "state.actionDisable",
+        "rules": {
+          "blocks": [
+            "normal",
+            "ultimate"
+          ],
+          "allows": [
+            "alpha",
+            "trait"
+          ]
+        },
+        "blockers": [
+          "sameAg",
+          "stack",
+          "expiry"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "taunt": {
+        "id": "taunt",
+        "label": "ヘイト",
+        "formId": "state.taunt",
+        "adoption": "candidate",
+        "runtime": "not_connected",
+        "handlerId": "state.taunt",
+        "rules": {
+          "appliesTo": "searchAttack"
+        },
+        "blockers": [
+          "multipleOwners",
+          "stealthPriority",
+          "count",
+          "expiry"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "stealth": {
+        "id": "stealth",
+        "label": "潜伏",
+        "formId": "state.stealth",
+        "adoption": "candidate",
+        "runtime": "not_connected",
+        "handlerId": "state.stealth",
+        "rules": {
+          "excludedFrom": "searchAttack"
+        },
+        "blockers": [
+          "tauntPriority",
+          "expiry"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "guardShare": {
+        "id": "guardShare",
+        "label": "守護（肩代わり）",
+        "formId": "state.guardShare",
+        "adoption": "candidate",
+        "runtime": "not_connected",
+        "handlerId": "state.guardShare",
+        "rules": {
+          "protector": "holder",
+          "remainder": "protectedTarget"
+        },
+        "blockers": [
+          "damageStage",
+          "rounding",
+          "cycles",
+          "aoe",
+          "protectorDeath",
+          "expiry"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "barrier": {
+        "id": "barrier",
+        "label": "バリア（消費式案）",
+        "formId": "state.barrier",
+        "adoption": "candidate",
+        "runtime": "reserved",
+        "handlerId": "state.barrier",
+        "rules": {
+          "consumable": true
+        },
+        "blockers": [
+          "consumeOrder",
+          "pierce",
+          "stack",
+          "expiry"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      },
+      "paralysis": {
+        "id": "paralysis",
+        "label": "麻痺",
+        "formId": "state.paralysis",
+        "adoption": "candidate",
+        "runtime": "reserved",
+        "handlerId": "state.paralysis",
+        "rules": {},
+        "blockers": [
+          "actionOrAg",
+          "publicParameters",
+          "stack",
+          "expiry"
+        ],
+        "source": "prototype-revision/baseline/app.js / 原案Excel:状態・状態付与"
+      }
+    },
+    "trait": {
+      "flying": {
+        "id": "flying",
+        "label": "飛行",
+        "formId": "trait.flying",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "terrainBypass"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "aquatic": {
+        "id": "aquatic",
+        "label": "水棲",
+        "formId": "trait.aquatic",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "terrainDependency"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "dash": {
+        "id": "dash",
+        "label": "疾走",
+        "formId": "trait.dash",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "agBuff"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "predation": {
+        "id": "predation",
+        "label": "捕食",
+        "formId": "trait.predation",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "executeBonus"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "mimicry": {
+        "id": "mimicry",
+        "label": "擬態",
+        "formId": "trait.mimicry",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "targetEvasion"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "poisonous": {
+        "id": "poisonous",
+        "label": "毒性",
+        "formId": "trait.poisonous",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "poison"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "poisonResist": {
+        "id": "poisonResist",
+        "label": "毒耐性",
+        "formId": "trait.poisonResist",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "poisonResist"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "swarm": {
+        "id": "swarm",
+        "label": "群体",
+        "formId": "trait.swarm",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "groupReference"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "pack": {
+        "id": "pack",
+        "label": "群れ",
+        "formId": "trait.pack",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "groupReference"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "mycelium": {
+        "id": "mycelium",
+        "label": "菌糸",
+        "formId": "trait.mycelium",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "heal"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "parasitic": {
+        "id": "parasitic",
+        "label": "寄生",
+        "formId": "trait.parasitic",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "poison"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "ancient": {
+        "id": "ancient",
+        "label": "古代",
+        "formId": "trait.ancient",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "ultimatePayoff"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "giant": {
+        "id": "giant",
+        "label": "巨大",
+        "formId": "trait.giant",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "frontDurability"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "carapace": {
+        "id": "carapace",
+        "label": "甲殻",
+        "formId": "trait.carapace",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "damageCut"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "crystal": {
+        "id": "crystal",
+        "label": "結晶",
+        "formId": "trait.crystal",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "barrier"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "electric": {
+        "id": "electric",
+        "label": "発電",
+        "formId": "trait.electric",
+        "adoption": "current",
+        "runtime": "metadata_only",
+        "handlerId": null,
+        "rules": {
+          "effectElements": [
+            "agBuff",
+            "agDebuff"
+          ]
+        },
+        "blockers": [
+          "behaviorBinding"
+        ],
+        "source": "prototype-revision/baseline/app.js:TRAITS"
+      },
+      "armored": {
+        "id": "armored",
+        "label": "装甲",
+        "formId": "trait.armored",
+        "adoption": "candidate",
+        "runtime": "studio_only",
+        "handlerId": "compose.alwaysState",
+        "rules": {
+          "state": "armorFlat",
+          "duration": "always"
+        },
+        "blockers": [
+          "engineBinding"
+        ],
+        "source": "development/card-studio/model.js:builtinTraits"
+      },
+      "ambush": {
+        "id": "ambush",
+        "label": "待ち伏せ",
+        "formId": "trait.ambush",
+        "adoption": "candidate",
+        "runtime": "studio_only",
+        "handlerId": "compose.alwaysState",
+        "rules": {
+          "state": "counter",
+          "duration": "always"
+        },
+        "blockers": [
+          "engineBinding"
+        ],
+        "source": "development/card-studio/model.js:builtinTraits"
+      },
+      "legacy.steady": {
+        "id": "legacy.steady",
+        "label": "初回被ダメージ-2",
+        "formId": "trait.legacy.steady",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "steady"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.seaHp": {
+        "id": "legacy.seaHp",
+        "label": "海上HP+6",
+        "formId": "trait.legacy.seaHp",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "seaHp"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.rangedTerrain": {
+        "id": "legacy.rangedTerrain",
+        "label": "森/高地攻撃AT倍率+0.05",
+        "formId": "trait.legacy.rangedTerrain",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "rangedTerrain"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.blessing": {
+        "id": "legacy.blessing",
+        "label": "祈祷に装甲追加",
+        "formId": "trait.legacy.blessing",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "blessing"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.widePrayer": {
+        "id": "legacy.widePrayer",
+        "label": "治癒陣+2",
+        "formId": "trait.legacy.widePrayer",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "widePrayer"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.quickStart": {
+        "id": "legacy.quickStart",
+        "label": "満タン時AG+5",
+        "formId": "trait.legacy.quickStart",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "quickStart"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.laneBreaker": {
+        "id": "legacy.laneBreaker",
+        "label": "列攻撃AT倍率+0.05",
+        "formId": "trait.legacy.laneBreaker",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "laneBreaker"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.middleRaid": {
+        "id": "legacy.middleRaid",
+        "label": "中衛攻撃AT倍率+0.05",
+        "formId": "trait.legacy.middleRaid",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "middleRaid"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.rampartCraft": {
+        "id": "legacy.rampartCraft",
+        "label": "殻壁守護+5",
+        "formId": "trait.legacy.rampartCraft",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "rampartCraft"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.devotedWard": {
+        "id": "legacy.devotedWard",
+        "label": "献身装甲+4",
+        "formId": "trait.legacy.devotedWard",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "devotedWard"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.sharpCommand": {
+        "id": "legacy.sharpCommand",
+        "label": "指揮AT+1",
+        "formId": "trait.legacy.sharpCommand",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "sharpCommand"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.generalBreaker": {
+        "id": "legacy.generalBreaker",
+        "label": "α対象破陣+10%",
+        "formId": "trait.legacy.generalBreaker",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "generalBreaker"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.rearCannon": {
+        "id": "legacy.rearCannon",
+        "label": "後衛範囲AT倍率+0.05",
+        "formId": "trait.legacy.rearCannon",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "rearCannon"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.rearWard": {
+        "id": "legacy.rearWard",
+        "label": "後衛遠隔被ダメ-3",
+        "formId": "trait.legacy.rearWard",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "rearWard"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.executeHunter": {
+        "id": "legacy.executeHunter",
+        "label": "低HP追撃AT倍率+0.1",
+        "formId": "trait.legacy.executeHunter",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "executeHunter"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.deepSnare": {
+        "id": "legacy.deepSnare",
+        "label": "撹乱AG低下+2",
+        "formId": "trait.legacy.deepSnare",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "deepSnare"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.armorPredator": {
+        "id": "legacy.armorPredator",
+        "label": "装甲捕食",
+        "formId": "trait.legacy.armorPredator",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "armorPredator"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.contactStance": {
+        "id": "legacy.contactStance",
+        "label": "接触毒構え",
+        "formId": "trait.legacy.contactStance",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "contactStance"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      },
+      "legacy.reflectStance": {
+        "id": "legacy.reflectStance",
+        "label": "反射殻構え",
+        "formId": "trait.legacy.reflectStance",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.abilityKey",
+        "rules": {
+          "key": "reflectStance"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:ABILITY_KEY_OPTIONS"
+      }
+    },
+    "alpha": {
+      "legacy.frontArmor": {
+        "id": "legacy.frontArmor",
+        "label": "開戦前衛装甲",
+        "formId": "alpha.legacy.frontArmor",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "frontArmor"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.harborWall": {
+        "id": "legacy.harborWall",
+        "label": "海/殻壁装甲",
+        "formId": "alpha.legacy.harborWall",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "harborWall"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.firstSnipe": {
+        "id": "legacy.firstSnipe",
+        "label": "初回狙撃AT倍率+0.15",
+        "formId": "alpha.legacy.firstSnipe",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "firstSnipe"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.firstFallHeal": {
+        "id": "legacy.firstFallHeal",
+        "label": "初落ち全体回復",
+        "formId": "alpha.legacy.firstFallHeal",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "firstFallHeal"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.frontDuel": {
+        "id": "legacy.frontDuel",
+        "label": "前衛中攻撃AT倍率+0.1",
+        "formId": "alpha.legacy.frontDuel",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "frontDuel"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.turnThreeCharge": {
+        "id": "legacy.turnThreeCharge",
+        "label": "3T前衛AT強化",
+        "formId": "alpha.legacy.turnThreeCharge",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "turnThreeCharge"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.scoutLead": {
+        "id": "legacy.scoutLead",
+        "label": "1T斥候AG強化",
+        "formId": "alpha.legacy.scoutLead",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "scoutLead"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.terrainDiscount": {
+        "id": "legacy.terrainDiscount",
+        "label": "地形コスト-2",
+        "formId": "alpha.legacy.terrainDiscount",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "terrainDiscount"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.midAg": {
+        "id": "legacy.midAg",
+        "label": "開戦中衛AG強化",
+        "formId": "alpha.legacy.midAg",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "midAg"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.allOutOrder": {
+        "id": "legacy.allOutOrder",
+        "label": "開戦全体AT/AG強化",
+        "formId": "alpha.legacy.allOutOrder",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "allOutOrder"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.finishSignal": {
+        "id": "legacy.finishSignal",
+        "label": "敵α露出時AT強化",
+        "formId": "alpha.legacy.finishSignal",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "finishSignal"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.openingBarrage": {
+        "id": "legacy.openingBarrage",
+        "label": "開幕掃射",
+        "formId": "alpha.legacy.openingBarrage",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "openingBarrage"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      },
+      "legacy.fallbackWard": {
+        "id": "legacy.fallbackWard",
+        "label": "α中衛化時全体装甲",
+        "formId": "alpha.legacy.fallbackWard",
+        "adoption": "current",
+        "runtime": "existing_key",
+        "handlerId": "engine.generalKey",
+        "rules": {
+          "key": "fallbackWard"
+        },
+        "blockers": [],
+        "source": "prototype-revision/baseline/app.js:GENERAL_KEY_OPTIONS"
+      }
+    },
+    "cell": {
+      "pending": {
+        "id": "pending",
+        "label": "マス効果（定義待ち）",
+        "formId": "cell.pending",
+        "adoption": "candidate",
+        "runtime": "not_connected",
+        "handlerId": null,
+        "rules": {},
+        "blockers": [
+          "event",
+          "effects",
+          "duration",
+          "stack",
+          "owner"
+        ],
+        "source": "原案Excel:地形・マス効果（未記入）"
+      }
+    }
+  },
+  "commonRules": {
+    "db.version": {
+      "label": "この入力形式の版",
+      "value": "card-ui-tree/2.0-draft",
+      "adoption": "proposal",
+      "source": "今回"
+    },
+    "db.authority": {
+      "label": "正本と生成物",
+      "value": {
+        "master": "xlsx.tables",
+        "generated": "json",
+        "jsonDirectEdit": false
+      },
+      "adoption": "proposal",
+      "source": "今回"
+    },
+    "db.null": {
+      "label": "未設定の表現",
+      "value": {
+        "defaultJsonNull": "unsetUnlessNullable",
+        "blankJsonCell": "error",
+        "unknownRule": "blocker",
+        "emptyArray": "none"
+      },
+      "adoption": "proposal",
+      "source": "今回"
+    },
+    "db.acceptance": {
+      "label": "採用・実装は別",
+      "value": {
+        "formStatus": "proposal",
+        "definitionStatusColumn": "adoption",
+        "runtimeColumn": "runtime",
+        "publishRequiresNoBlockers": true
+      },
+      "adoption": "proposal",
+      "source": "今回"
+    },
+    "ui.expand": {
+      "label": "部品参照の表示",
+      "value": {
+        "inline": true,
+        "newScreen": false,
+        "detailCollapsed": true,
+        "configuredDetailsBadge": true
+      },
+      "adoption": "proposal",
+      "source": "今回"
+    },
+    "ui.branch": {
+      "label": "分岐切替",
+      "value": {
+        "preserveInactiveDraft": true,
+        "excludeInactiveFromExecution": true
+      },
+      "adoption": "adopted",
+      "source": "TARGETING.md"
+    },
+    "ui.fields": {
+      "label": "カード個別入力",
+      "value": {
+        "baseFields": 18,
+        "instantEffectHasDuration": false,
+        "traitAlwaysHasDurationInput": false
+      },
+      "adoption": "adopted",
+      "source": "CARD_INFORMATION.md"
+    },
+    "ui.newChoice": {
+      "label": "新しい概念の追加",
+      "value": {
+        "freeTextExecutable": false,
+        "route": "chatThenTypedDefinition",
+        "newPrimitiveRequiresCode": true
+      },
+      "adoption": "proposal",
+      "source": "今回"
+    },
+    "query.default": {
+      "label": "通常の対象境界",
+      "value": {
+        "life": "alive",
+        "ties": "frontToRearThenLeftToRightThenAlly",
+        "absence": "skip",
+        "filterAppliesOnlySearch": true
+      },
+      "adoption": "adopted",
+      "source": "TARGETING.md"
+    },
+    "predicate.subject": {
+      "label": "条件の判定主体",
+      "value": {
+        "contextFromRef": true,
+        "nestedInheritsContext": true,
+        "candidate": "candidateCard",
+        "activation": "subjectOrSelf",
+        "hiddenSubjectIgnored": true
+      },
+      "adoption": "proposal",
+      "source": "今回"
+    },
+    "trigger.inherit": {
+      "label": "発動時点の継承",
+      "value": {
+        "normal": "slotAction",
+        "ultimate": "ultimateAction",
+        "alpha": "explicitRequired",
+        "definition": "explicitRequired",
+        "effect": "parentOrOverride"
+      },
+      "adoption": "proposal",
+      "source": "今回"
+    },
+    "query.simplify": {
+      "label": "原案の選択肢削減候補",
+      "value": {
+        "newSearchDefault": "singleCondition",
+        "compoundRetainedInDetails": true,
+        "costReferenceRemoval": "pending",
+        "orderDistanceOneOnly": "pending"
+      },
+      "adoption": "candidate",
+      "source": "原案ExcelとTARGETING.md"
+    },
+    "repeat.boundary": {
+      "label": "繰り返しの境界",
+      "value": {
+        "hits": "fixedTargets",
+        "effectRepeat": "reselect",
+        "actionRepeat": "effectsInOrder",
+        "countsIncludeFirst": true
+      },
+      "adoption": "adopted",
+      "source": "REPETITION.md"
+    },
+    "repeat.previous": {
+      "label": "前効果対象",
+      "value": {
+        "scope": "currentActionSet",
+        "repeatedEffect": "unionSelectedTargets",
+        "nextActionSet": "reset",
+        "firstEffect": "invalid"
+      },
+      "adoption": "adopted",
+      "source": "REPETITION.md"
+    },
+    "duration.precedence": {
+      "label": "期間の初期値",
+      "value": {
+        "order": [
+          "explicit",
+          "definition.rules.duration",
+          "formDefault"
+        ],
+        "instant": "omit",
+        "always": "omitTurns"
+      },
+      "adoption": "proposal",
+      "source": "今回"
+    },
+    "duration.runtime": {
+      "label": "現行状態の期限",
+      "value": {
+        "grantTurnIncluded": true,
+        "poisonGrantedT1Duration3Ticks": [
+          2,
+          3
+        ],
+        "armorEachGrantExpiresSeparately": true
+      },
+      "adoption": "current",
+      "source": "docs/status-effect-rules-v0.md"
+    },
+    "damage.reflect": {
+      "label": "反射殻",
+      "value": {
+        "basis": "actualHpLoss",
+        "round": "floor",
+        "minimum": 1,
+        "requiresBothAlive": true,
+        "requiresPositiveLoss": true,
+        "recursive": false
+      },
+      "adoption": "current",
+      "source": "prototype-revision/baseline/app.js"
+    },
+    "damage.drain": {
+      "label": "吸収回復",
+      "value": {
+        "basis": "damageIncludingOverkill",
+        "round": "floor",
+        "requiresSelfAlive": true,
+        "blockedBy": "healBlock"
+      },
+      "adoption": "current",
+      "source": "prototype-revision/baseline/app.js"
+    },
+    "damage.armor": {
+      "label": "固定装甲",
+      "value": {
+        "consumable": false,
+        "stack": "sumActiveGrants",
+        "minimumDamage": 1
+      },
+      "adoption": "current",
+      "source": "prototype-revision/baseline/app.js"
+    },
+    "combat.fixed": {
+      "label": "各カードで入力しない原則",
+      "value": {
+        "random": false,
+        "board": [
+          3,
+          3
+        ],
+        "costLimit": 30,
+        "maxCards": 9,
+        "alpha": "freelyChosen",
+        "sameAg": "D4"
+      },
+      "adoption": "adopted",
+      "source": "docs/research-decision-register-v0.md"
+    },
+    "card.deckLimit": {
+      "label": "枚数制限の合算",
+      "value": {
+        "forEachN": "countCardsWithLimit1ToN<=N",
+        "null": "unrestricted",
+        "countInstances": true
+      },
+      "adoption": "adopted",
+      "source": "CARD_INFORMATION.md"
+    },
+    "card.grid": {
+      "label": "マスID",
+      "value": {
+        "indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "front": [
+          0,
+          3,
+          6
+        ],
+        "rows": [
+          "left",
+          "center",
+          "right"
+        ],
+        "columns": [
+          "front",
+          "middle",
+          "rear"
+        ],
+        "relativeOrigin": "holder"
+      },
+      "adoption": "adopted",
+      "source": "CARD_INFORMATION.md"
+    },
+    "new.rules": {
+      "label": "未定の共通規則を扱う",
+      "value": {
+        "referenceMoment": null,
+        "ratioDamageOrder": null,
+        "buffMultiplyBase": null,
+        "moveCollision": null,
+        "reactionChain": null,
+        "publishBlockedIfUsed": true
+      },
+      "adoption": "candidate",
+      "source": "原案Excel"
+    },
+    "import.compat": {
+      "label": "旧自由文・独自条件",
+      "value": {
+        "preserveOriginal": true,
+        "inferExecutableFromText": false,
+        "migrateOnExplicitEdit": true,
+        "unknownKey": "error"
+      },
+      "adoption": "proposal",
+      "source": "今回"
+    },
+    "scope.connection": {
+      "label": "今回の成果の範囲",
+      "value": {
+        "schemaExportValidated": true,
+        "uiConnected": false,
+        "battleEngineConnected": false,
+        "candidateEnabledByDefault": false
+      },
+      "adoption": "proposal",
+      "source": "今回"
+    }
+  },
+  "contract": {
+    "showIf": "AND of clauses; all/any/not recursively; field.in uses exact JSON equality",
+    "context": "$name reads inherited call context. rules.context on references overrides it.",
+    "dynamicChoice": {
+      "state": "def:state",
+      "trait": "def:trait",
+      "class": "enum:class",
+      "terrain": "enum:terrain",
+      "preferredTerrain": "enum:terrain"
+    },
+    "dynamicParameter": "parameter chooses a numeric/quantity field of the parent effect; value reuses its type, constraints and widget",
+    "inactive": "retained in editor draft; ignored in active output",
+    "definitionResolution": "dynamic:category:key resolves currentObject[key] to definitions[category][id].formId",
+    "unresolved": "preserve in draft; reject runtime publication; no natural-language evaluation"
+  },
+  "source": {
+    "xlsx": "カード基礎情報DB_入力ツリー_v2.xlsx",
+    "sha256": "f0c2ad935726646704559ba98e117dc5b84729d885aba4e2f8535763764cdcd1"
+  }
+}

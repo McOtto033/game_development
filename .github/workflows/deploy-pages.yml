@@ -32,6 +32,9 @@ jobs:
       - name: Verify Card Studio
         run: node --test development/card-studio/model.test.js development/card-studio/targeting.test.js development/card-studio/restrictions.test.js development/card-studio/repetition.test.js development/card-studio/ability-ideas.test.js development/card-studio/server.test.js
 
+      - name: Verify Card Studio v2
+        run: node --test development/card-studio-v2/model.test.js
+
       - name: Stage playable builds
         run: |
           mkdir -p "$RUNNER_TEMP/pages"
@@ -40,6 +43,10 @@ jobs:
           mkdir -p "$RUNNER_TEMP/pages/card-studio"
           for file in index.html app.js model.js targeting.js storage.js styles.css favicon.svg; do
             cp "development/card-studio/$file" "$RUNNER_TEMP/pages/card-studio/"
+          done
+          mkdir -p "$RUNNER_TEMP/pages/card-studio-v2"
+          for file in index.html app.js model.js storage.js styles.css schema.json favicon.svg; do
+            cp "development/card-studio-v2/$file" "$RUNNER_TEMP/pages/card-studio-v2/"
           done
           touch "$RUNNER_TEMP/pages/.nojekyll"
 
